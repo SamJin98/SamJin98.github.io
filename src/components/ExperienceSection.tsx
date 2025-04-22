@@ -12,7 +12,7 @@ export default function ExperienceSection() {
     >
       <div className="container max-w-4xl mx-auto px-6 md:px-4">
         <MotionWrapper>
-          <h2 className="text-2xl font-bold mb-8 text-center md:text-left flex items-center md:inline-block">
+          <h2 className="text-2xl font-bold pt-8 mb-8 text-center md:text-left flex items-center md:inline-block">
             <motion.span
               className="inline-block mr-2"
               initial={{ rotate: 0 }}
@@ -29,9 +29,9 @@ export default function ExperienceSection() {
           {workExperience.map((job, index) => (
             <TimelineItem
               key={job.company + job.period}
-              title={`👨‍💻 ${job.position} | ${job.company}`}
-              subtitle={`🌍 ${job.location}`}
-              date={`📅 ${job.period}`}
+              title={`${job.position} | ${job.company}`}
+              subtitle={`${job.location}`}
+              date={`${job.period}`}
               isLast={index === workExperience.length - 1}
               index={index}
             >

@@ -1,0 +1,144 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import GlassHeader from '@/components/GlassHeader'
+import MotionWrapper from '@/components/MotionWrapper'
+import { motion } from 'framer-motion'
+import { getCollection, type CollectionEntry } from 'astro:content'
+
+type BlogPost = CollectionEntry<'blog'>
+
+const posts = await getCollection('blog')
+const sortedPosts: BlogPost[] = posts.sort(
+  (a: BlogPost, b: BlogPost) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+)
+
+// Group posts by year
+const postsByYear = sortedPosts.reduce(
+  (acc, post) => {
+    const year = new Date(post.data.date).getFullYear().toString()
+    if (!acc[year]) {
+      acc[year] = []
+    }
+    acc[year].push(post)
+    return acc
+  },
+  {} as Record<string, BlogPost[]>
+)
+
+// Get sorted years (descending)
+const years = Object.keys(postsByYear).sort((a, b) => parseInt(b) - parseInt(a))
+---
+
+<Layout title="Blog">
+  <GlassHeader client:only="react" pathname={Astro.url.pathname} />
+  <div class="flex flex-col min-h-screen pt-24">
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-3xl">
+      {
+        years.map((year, yearIndex) => (
+          <MotionWrapper client:load delay={yearIndex * 0.2}>
+            <section class="relative mb-12">
+              <div class="year-number absolute -z-10 top-0 -left-2">{year}</div>
+
+              <div class="space-y-1 pt-22 pl-10">
+                {postsByYear[year].map((post, index) => (
+                  <MotionWrapper client:load delay={yearIndex * 0.2 + index * 0.1}>
+                    <div class="py-1">
+                      <div class="flex flex-col mb-4">
+                        <a href={`/blog/${post.slug}`} class="inline-block hover:no-underline group">
+                          <h2 class="title-link text-xl md:text-2xl font-medium transition-all duration-200 text-foreground/80">
+                            <span class="bg-left-bottom bg-gradient-to-r from-primary to-primary bg-[length:0%_2px] bg-no-repeat group-hover:bg-[length:100%_2px] transition-all duration-300 ease-out">
+                              {post.data.title}
+                            </span>
+                          </h2>
+                        </a>
+                        <div class="flex items-center mt-1 flex-wrap gap-x-3 gap-y-1">
+                          <time class="text-muted-foreground text-sm">
+                            {new Date(post.data.date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </time>
+
+                          {post.data.tags && post.data.tags.length > 0 && (
+                            <div class="flex flex-wrap gap-2">
+                              {[...post.data.tags]
+                                .sort((a, b) => a.localeCompare(b))
+                                .map((tag: string) => (
+                                  <span class="tag text-xs px-2 py-0.5 rounded-full font-medium">{tag}</span>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {post.data.excerpt && (
+                          <p class="text-muted-foreground text-sm mt-2 line-clamp-2">{post.data.excerpt}</p>
+                        )}
+                      </div>
+                    </div>
+                  </MotionWrapper>
+                ))}
+              </div>
+            </section>
+          </MotionWrapper>
+        ))
+      }
+    </main>
+  </div>
+</Layout>
+
+<style>
+  section {
+    position: relative;
+  }
+
+  .year-number {
+    font-size: 12rem;
+    font-weight: 500;
+    line-height: 0.8;
+    font-family: 'Space Grotesk', 'Archivo', 'Inter', sans-serif;
+    letter-spacing: -0.03em;
+    color: transparent;
+    -webkit-text-stroke: 1.8px var(--year-stroke-color);
+    text-stroke: 1.8px var(--year-stroke-color);
+  }
+
+  .title-link:hover {
+    color: var(--color-primary);
+  }
+
+  .title-link {
+    font-family: 'Quicksand', 'Nunito', 'Poppins', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    border-radius: 0.25rem;
+  }
+
+  .tag {
+    background-color: var(--color-accent);
+    color: var(--color-accent-foreground);
+    opacity: 0.7;
+  }
+
+  :root {
+    --year-stroke-color: rgba(255, 255, 255, 0.08);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --year-stroke-color: rgba(0, 0, 0, 0.07);
+    }
+  }
+
+  /* 确保在亮色模式下文本描边更明显 */
+  .dark .year-number {
+    -webkit-text-stroke: 1.8px rgba(255, 255, 255, 0.08);
+    text-stroke: 1.8px rgba(255, 255, 255, 0.08);
+    opacity: 0.3;
+  }
+
+  :root:not(.dark) .year-number {
+    -webkit-text-stroke: 1.8px rgba(0, 0, 0, 0.07);
+    text-stroke: 1.8px rgba(0, 0, 0, 0.07);
+    opacity: 0.9;
+  }
+</style>

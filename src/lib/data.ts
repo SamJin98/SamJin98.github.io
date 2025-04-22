@@ -24,10 +24,10 @@ export const workExperience = [
     position: 'Research Assistant',
     period: 'Feb 2024 – Present',
     achievements: [
-      'Led automation of deployment using Vercel and GitHub Actions, saving 32 hours daily and handling 8,000+ daily requests.',
-      'Integrated JWT-based middleware with university SSO for secure, scalable user access via RBAC.',
-      'Improved multi-tenant data retrieval using Pinecone namespaces, reducing fetch time by 78%.',
-      "Enhanced LangChain Retriever with 'Retrieve Merger', increasing multi-source query accuracy by 25%."
+      'Automated deployment pipeline to streamline research tool delivery and reduce manual workload.',
+      'Implemented secure authentication using JWT and university SSO, enabling scalable and role-based access control.',
+      'Optimized data retrieval for multi-tenant educational content by restructuring vector database architecture.',
+      'Enhanced AI agent accuracy for educational queries by merging retrieval strategies for better multi-source response handling.'
     ]
   },
   {

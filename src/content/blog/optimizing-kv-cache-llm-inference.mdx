@@ -1,0 +1,66 @@
+---
+title: 'Optimizing KV Cache in LLMs'
+date: '2024-10-11'
+excerpt: 'How I explored ways to reduce memory usage and boost inference speed in LLMs using selective KV cache retention and speculative decoding.'
+tags: ['LLM', 'AI']
+---
+
+During my graduate research at Case Western, I became obsessed with a very specific problem: why are large language models so memory-hungry at inference time?
+
+Specifically, I focused on the **KV cache** — the key-value pairs stored during decoding in transformer-based models. These caches are critical for fast autoregressive generation, but in multi-layer models, they balloon quickly and dominate memory use.
+
+What started as curiosity turned into a full-blown optimization project.
+
+---
+
+### The Problem: KV Cache Bloat
+
+When using a transformer decoder to generate text, each new token adds key-value pairs at every layer. If you're generating long sequences, the memory footprint can spike drastically, especially when you use multiple decoding paths (like in speculative decoding).
+
+I wanted to answer:
+- Can we reduce the KV cache size without hurting output quality?
+- How do we balance accuracy vs. speed in speculative decoding setups?
+
+---
+
+### My Approach
+
+1. **Token Importance Ranking**
+   I experimented with using **attention scores** to rank previously generated tokens. Tokens that had little influence on the current output could be pruned from the cache.
+
+2. **Layer-wise Pruning**
+   Different layers contribute differently to output generation. I added logic to prune KV pairs in higher layers more aggressively — this provided a memory-speed tradeoff.
+
+3. **Speculative KV Reuse**
+   In speculative decoding (draft and target model), I worked on aligning KV caches so that reusable tokens wouldn’t have to be recomputed if verified.
+
+---
+
+### What Worked
+
+- **Selective Retention**: Dropping low-attention tokens gave 20–30% memory savings on longer sequences with minimal loss in quality.
+- **Hybrid Cache Policy**: Combining fixed-length retention with dynamic filtering performed better than either alone.
+- **Compatibility**: The optimizations worked without needing to retrain the model — important for working with off-the-shelf LLMs.
+
+---
+
+### Challenges
+
+- **Attention scores aren't perfect** — sometimes seemingly unimportant tokens became useful again later.
+- **Multi-turn contexts** made retention harder. I had to build a more nuanced pruning logic to avoid chopping off parts of the conversation that were later relevant.
+- **Debugging was brutal** — memory errors across 12 layers with custom pruning code was not for the faint of heart.
+
+---
+
+### Takeaways
+
+This project taught me a lot about real-world LLM inference:
+
+- **Inference speed matters** as much as model accuracy, especially in production.
+- **You can’t optimize blindly** — you need ways to quantify the impact of changes, both on metrics and on final outputs.
+- **There’s always more fat to trim**, but the best gains come from understanding the system, not just tweaking knobs.
+
+---
+
+I plan to open source a simplified version of the cache optimization framework soon. If you're working on inference infra or LLM tooling, hit me up — I'd love to collaborate!
+

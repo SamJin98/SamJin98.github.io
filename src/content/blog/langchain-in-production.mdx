@@ -1,0 +1,84 @@
+---
+title: 'LangChain in Production'
+date: '2024-08-12'
+excerpt: 'From hallucination nightmares to retriever tuning and latency battles — here’s what actually works when you move LangChain into the real world.'
+tags: ['AI', 'LLM']
+---
+
+LangChain looks easy in demos.
+
+You build a quick retrieval-augmented generation (RAG) app. You toss in some documents, wrap a chain around it, and boom — you’ve got a chatbot.
+
+That was our starting point too. But we weren’t building a toy project. We were building a multi-tenant AI assistant for real college courses — used by professors and students during high-stakes final reviews.
+
+What followed was weeks of tweaking, debugging, and rethinking everything we thought we knew about AI tooling.
+
+---
+
+### The Vision
+
+We wanted a system that could:
+- Index and retrieve lecture notes, office hour transcripts, syllabi, and more
+- Handle 10+ courses in parallel with strict access control
+- Provide reliable, context-aware answers
+
+LangChain seemed like the right foundation. It gave us composable components, built-in retrievers, and integration with OpenAI.
+
+But “it works” in dev is very different from “it works” at scale.
+
+---
+
+### Retriever Hell
+
+The first big issue? Our chatbot kept **hallucinating**.
+
+We traced it back to the retriever setup:
+- Default vector similarity was pulling irrelevant matches
+- Chunking strategies led to broken sentence fragments
+- Important tokens (like dates or section headers) were getting lost
+
+What fixed it:
+- **Recursive chunking with overlap** — improved context integrity
+- **Hybrid retrieval** — combining semantic search (Pinecone) with keyword filters
+- **Custom reranking layer** — we used a lightweight cross-encoder to re-score results
+
+---
+
+### Latency Battles
+
+Users don’t want to wait 10 seconds for a response. Our system was too slow, especially with multiple retrievers and streaming responses.
+
+Fixes included:
+- Aggressively caching metadata and Pinecone namespaces
+- Compressing prompts and limiting token bloat
+- Running fast draft generations client-side while waiting for the “real” answer
+
+---
+
+### Real Users, Real Problems
+
+When students used the tool, they typed like humans — emojis, half-formed questions, references to “that thing from week 3.”
+
+We had to:
+- Add robust fuzzy matching
+- Train the system to fallback gracefully (e.g., “I don’t have that info, but here’s what might help…”)
+- Give instructors override options and manual feedback channels
+
+---
+
+### What We’d Tell Our Past Selves
+
+1. **LangChain is powerful, but raw** — You’ll write a lot of glue code.
+2. **Test with real user data early** — Demos won’t reveal your blind spots.
+3. **RAG is a system, not a magic bullet** — Retrieval, prompt design, reranking, and user behavior all matter.
+
+---
+
+### Final Thoughts
+
+Despite all the pain, we shipped it. Students got faster answers, professors had less email clutter, and the system is now a core part of our department’s teaching toolkit.
+
+LangChain helped — but it was everything *around* LangChain that made it work.
+
+If you're building RAG apps beyond the sandbox, you're not alone. Feel free to reach out — I’ve got the battle scars to prove it.
+

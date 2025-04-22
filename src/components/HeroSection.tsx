@@ -41,14 +41,13 @@ export default function HeroSection() {
               variants={childVariants}
             >
               {personalInfo.name}{" "}
-              <span className="inline-block animate-pulse">✨</span>
             </motion.h1>
 
             <motion.p
               className="text-xl text-muted-foreground mb-6"
               variants={childVariants}
             >
-              Software Engineer 👨‍💻
+              Software Engineer
             </motion.p>
 
             <motion.div
@@ -61,7 +60,7 @@ export default function HeroSection() {
                 whileHover={{ scale: 1.05, color: "#4b5563" }}
               >
                 <MapPin className="h-4 w-4 mr-2" />
-                📍 {personalInfo.location}
+                {personalInfo.location}
               </motion.div>
 
               <motion.a
@@ -71,7 +70,7 @@ export default function HeroSection() {
                 whileHover={{ scale: 1.05, color: "#4b5563" }}
               >
                 <Mail className="h-4 w-4 mr-2" />
-                ✉️ {personalInfo.email}
+                {personalInfo.email}
               </motion.a>
 
               <motion.a
@@ -83,7 +82,7 @@ export default function HeroSection() {
                 whileHover={{ scale: 1.05, color: "#4b5563" }}
               >
                 <Github className="h-4 w-4 mr-2" />
-                🌟 GitHub
+                GitHub
               </motion.a>
 
               <motion.a
@@ -95,7 +94,7 @@ export default function HeroSection() {
                 whileHover={{ scale: 1.05, color: "#4b5563" }}
               >
                 <Linkedin className="h-4 w-4 mr-2" />
-                🔗 LinkedIn
+                LinkedIn
               </motion.a>
             </motion.div>
           </div>

@@ -4,22 +4,44 @@ import { Menu, X, Home, FolderGit2, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-// Define navigation items
-const navItems = [
-  { label: "Home", href: "#hero", icon: <Home size={18} /> },
+// Define BASE navigation items for the main page
+const mainPageNavItems = [
+  { label: "Home", href: "#hero", icon: <Home size={18} /> }, // Back to #hero
   { label: "Experience", href: "#experience" },
   { label: "Skills", href: "#skills" },
   { label: "Projects", href: "#projects" },
-  // { label: "Awards", href: "#awards", icon: "🏆" },
   { label: "Education", href: "#education" },
-  // { label: "Contact", href: "#contact", icon: <Send size={18} /> }
+  { label: "Blog", href: "/blog" }, // Blog is now part of main page items
 ];
 
-export default function GlassHeader() {
+// Define navigation items specifically for the blog page
+const blogPageNavItems = [
+  { label: "Home", href: "/", icon: <Home size={18} /> }, // Links back to main page
+  { label: "Blog", href: "/blog" }, // Stays on blog page (can be used for active state)
+];
+
+// Define component props interface
+interface GlassHeaderProps {
+  pathname: string; // Add pathname prop
+}
+
+export default function GlassHeader({ pathname }: GlassHeaderProps) { // Destructure pathname prop
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
+
+  // Determine nav items based on pathname
+  const isHomePage = pathname === '/';
+  const isBlogPage = pathname === '/blog';
+  const isBlogPostPage = pathname.startsWith('/blog/') && pathname !== '/blog';
+
+  // Choose navigation items based on the current page
+  const navItems = isBlogPostPage 
+    ? blogPageNavItems
+    : isBlogPage 
+      ? blogPageNavItems 
+      : mainPageNavItems;
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -90,31 +112,51 @@ export default function GlassHeader() {
     };
   }, []); // Empty dependency array: runs once on mount
 
-  // Smooth scroll handler
+  // Smooth scroll handler / Navigation handler
   const handleNavLinkClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
     href: string
   ) => {
-    e.preventDefault();
-    const targetId = href.substring(1);
-    const targetElement = document.getElementById(targetId);
-    if (targetElement) {
-      targetElement.scrollIntoView({
-        behavior: "smooth",
-      });
-    }
+    // If it's a hash link (including #hero) on the main page, smooth scroll
+    if (href.startsWith("#") && pathname === '/') {
+      e.preventDefault();
+      const targetId = href.substring(1);
+      const targetElement = document.getElementById(targetId);
+      if (targetElement) {
+        targetElement.scrollIntoView({
+          behavior: "smooth",
+        });
+        // Manually set active section on click for immediate feedback
+        setActiveSection(targetId); 
+      } else if (href === '#hero') { // Special case for #hero if element isn't found immediately (rare)
+         window.scrollTo({ top: 0, behavior: 'smooth' });
+         setActiveSection('hero');
+      }
+    } 
+    // For absolute paths (like '/' or '/blog'), let the default anchor behavior handle navigation.
+    // No preventDefault() here.
+
     if (isMenuOpen) {
       toggleMenu(); // Close mobile menu on click
     }
   };
 
-  // Intersection Observer for active link highlighting
+  // Intersection Observer for active link highlighting (only on main page)
   useEffect(() => {
-    const sectionIds = navItems.map(item => item.href.substring(1));
-    // Ensure 'hero' (or your main top section ID) is observed if it exists
-    const heroElement = document.getElementById('hero');
+    // Only run observer logic on the main page
+    if (pathname !== '/') {
+       setActiveSection(null); // Clear active section if not on main page
+       return; 
+    }
+
+    const sectionIds = navItems
+      .map(item => item.href.startsWith('#') ? item.href.substring(1) : null)
+      .filter((id): id is string => id !== null);
+      
+    // Ensure 'hero' is included if it exists, even if not explicitly in filtered navItems for observer
+    const heroElement = document.getElementById('hero'); 
     if (heroElement && !sectionIds.includes('hero')) {
-      sectionIds.unshift('hero');
+       sectionIds.unshift('hero');
     }
 
     const sections = sectionIds
@@ -135,31 +177,28 @@ export default function GlassHeader() {
       let minTop = Infinity;
 
       entries.forEach((entry) => {
-        const targetElement = entry.target as HTMLElement;
-        if (entry.isIntersecting) {
-          // Find the intersecting element whose top is closest to the top margin (-40%)
-          const topRelativeToRoot = entry.boundingClientRect.top;
-          // Consider elements whose top is within or just below the top margin
-          // We check <= 0 because the rootMargin is negative from the top
-          if (topRelativeToRoot <= 0 && Math.abs(topRelativeToRoot) < minTop) {
-             minTop = Math.abs(topRelativeToRoot);
-             bestCandidateId = targetElement.id;
-          }
+         const targetElement = entry.target as HTMLElement;
+         // Ensure we only process sections we are observing
+         if (sectionIds.includes(targetElement.id)) { 
+            if (entry.isIntersecting) {
+            // Find the intersecting element whose top is closest to the top margin (-40%)
+            const topRelativeToRoot = entry.boundingClientRect.top;
+            // Consider elements whose top is within or just below the top margin
+            if (topRelativeToRoot <= 0 && Math.abs(topRelativeToRoot) < minTop) {
+                minTop = Math.abs(topRelativeToRoot);
+                bestCandidateId = targetElement.id;
+            }
+            }
         }
       });
 
-      // If we found a candidate intersecting near the top margin, set it
       if (bestCandidateId) {
         setActiveSection(bestCandidateId);
       } else {
-         // Fallback: If nothing is intersecting *near the top margin*,
-         // check if any section is intersecting *at all*. 
-         // Take the first one found (usually the highest visible one).
-         const anyIntersecting = entries.find(e => e.isIntersecting);
+         const anyIntersecting = entries.find(e => e.isIntersecting && sectionIds.includes((e.target as HTMLElement).id));
          if (anyIntersecting) {
              setActiveSection((anyIntersecting.target as HTMLElement).id);
          } 
-         // Optional: if nothing is intersecting at all, maybe default to first/last?
       }
     };
 
@@ -172,16 +211,18 @@ export default function GlassHeader() {
       let minTop = Infinity;
 
       sections.forEach(section => {
-        const rect = section.getBoundingClientRect();
-        // Find section whose top is closest to the viewport top (but still visible)
-        if (rect.top >= 0 && rect.top < window.innerHeight && rect.top < minTop) {
-          minTop = rect.top;
-          currentActiveSection = section.id;
+        if (sectionIds.includes(section.id)) {
+            const rect = section.getBoundingClientRect();
+            if (rect.top >= 0 && rect.top < window.innerHeight && rect.top < minTop) {
+            minTop = rect.top;
+            currentActiveSection = section.id;
+            }
         }
       });
 
-      // Default to 'hero' if no section is found initially or hero is closest
-      setActiveSection(currentActiveSection || (sections.find(s=>s.id === 'hero') ? 'hero' : null));
+      const heroIsObserved = sections.some(s => s.id === 'hero');
+      // Set active section, prioritizing 'hero' if visible or if nothing else is found
+      setActiveSection(currentActiveSection || (heroIsObserved && document.getElementById('hero')?.getBoundingClientRect()?.top >= 0 ? 'hero' : null));
     };
 
     const timeoutId = setTimeout(checkInitialSection, 100);
@@ -192,7 +233,7 @@ export default function GlassHeader() {
         if (section) observer.unobserve(section);
       });
     };
-  }, []); // Dependencies: navItems if it can change dynamically
+  }, [pathname, navItems]); // Add pathname and navItems to dependencies
 
   return (
     <>
@@ -216,7 +257,10 @@ export default function GlassHeader() {
               onClick={(e) => handleNavLinkClick(e, item.href)}
               className={cn(
                 "relative px-3 py-1.5 rounded-full transition-colors duration-200 ease-in-out hover:text-foreground",
-                activeSection === item.href.substring(1)
+                // Adjust active logic: 
+                // - On blog page, check href directly
+                // - On main page, check activeSection based on hash
+                (pathname === '/blog' ? pathname === item.href : activeSection === item.href.substring(1))
                   ? "text-foreground font-semibold"
                   : "text-foreground/60",
                 isScrolling ? "hover:bg-background/50 dark:hover:bg-background-dark/50" : ""
@@ -227,7 +271,9 @@ export default function GlassHeader() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              {activeSection === item.href.substring(1) && (
+              {
+                // Adjust active pill logic
+                (pathname === '/blog' ? pathname === item.href : activeSection === item.href.substring(1)) && (
                 <motion.span
                   className="absolute inset-0 bg-muted/50 rounded-full -z-10"
                   layoutId="activePill"
@@ -282,7 +328,8 @@ export default function GlassHeader() {
                   onClick={(e) => handleNavLinkClick(e, item.href)}
                   className={cn(
                     "transition-colors hover:text-foreground py-2",
-                    activeSection === item.href.substring(1)
+                     // Adjust active logic for mobile
+                    (pathname === '/blog' ? pathname === item.href : activeSection === item.href.substring(1))
                       ? "text-foreground font-semibold"
                       : "text-foreground/70"
                   )}

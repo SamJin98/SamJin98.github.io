@@ -1,13 +1,14 @@
 ---
-import "../styles/global.css";
+import '../styles/global.css'
+import '../styles/mdx.css'
+import { ViewTransitions } from 'astro:transitions'
 
 interface Props {
-  title?: string;
-  description?: string;
+  title?: string
+  description?: string
 }
 
-const { title = "Ruilin (Sam) Jin - Portfolio", description = "My Portfolio" } =
-  Astro.props;
+const { title = 'Ruilin (Sam) Jin - Portfolio', description = 'My Portfolio' } = Astro.props
 ---
 
 <!doctype html>
@@ -25,10 +26,13 @@ const { title = "Ruilin (Sam) Jin - Portfolio", description = "My Portfolio" } =
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500&family=Archivo:wght@400;500&family=Quicksand:wght@400;500;600&family=Nunito:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <ViewTransitions />
   </head>
-  <body
-    class="min-h-screen bg-background font-sans antialiased selection:bg-purple-500/20 selection:text-purple-500"
-  >
+  <body class="min-h-screen bg-background font-sans antialiased selection:bg-purple-500/20 selection:text-purple-500">
     <div
       class="fixed inset-0 -z-10 h-full w-full bg-background bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"
     >
@@ -38,26 +42,51 @@ const { title = "Ruilin (Sam) Jin - Portfolio", description = "My Portfolio" } =
 </html>
 
 <script is:inline>
-  const getThemePreference = () => {
-    if (typeof localStorage !== "undefined" && localStorage.getItem("theme")) {
-      return localStorage.getItem("theme");
+  const theme = (() => {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+      return localStorage.getItem('theme')
     }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  };
-  const isDark = getThemePreference() === "dark";
-  document.documentElement.classList[isDark ? "add" : "remove"]("dark");
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark'
+    }
+    return 'light'
+  })()
 
-  if (typeof localStorage !== "undefined") {
+  if (theme === 'light') {
+    document.documentElement.classList.remove('dark')
+  } else {
+    document.documentElement.classList.add('dark')
+  }
+
+  // Function to apply the theme
+  const applyTheme = () => {
+    const currentTheme = localStorage.getItem('theme')
+    // Use system preference only if no theme is stored or on initial load without storage
+    const themeToApply = currentTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+
+    if (themeToApply === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }
+
+  // Apply theme on initial load
+  applyTheme()
+
+  // Apply theme after view transitions
+  document.addEventListener('astro:after-swap', applyTheme)
+
+  // Keep the mutation observer to update localStorage when theme is toggled
+  if (typeof localStorage !== 'undefined') {
     const observer = new MutationObserver(() => {
-      const isDark = document.documentElement.classList.contains("dark");
-      localStorage.setItem("theme", isDark ? "dark" : "light");
-    });
+      const isDark = document.documentElement.classList.contains('dark')
+      localStorage.setItem('theme', isDark ? 'dark' : 'light')
+    })
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["class"],
-    });
+      attributeFilter: ['class']
+    })
   }
 </script>
 

@@ -1,16 +1,26 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
-import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from 'astro/config'
+import tailwindcss from '@tailwindcss/vite'
+// import sitemap from '@astrojs/sitemap'
+import rehypeSlug from 'rehype-slug'
+import rehypePrettyCode from 'rehype-pretty-code'
 
-import react from "@astrojs/react";
+import react from '@astrojs/react'
 
-// https://astro.build/config
+import mdx from '@astrojs/mdx'
+
 export default defineConfig({
-  site: "https://samjin98.github.io/",
+  site: 'https://samjin98.github.io/',
   // base: "/Portfolio/",
   vite: {
-      plugins: [tailwindcss()],
+    plugins: [tailwindcss()]
   },
-
-  integrations: [react()]
-});
+  integrations: [
+    react(),
+    mdx({
+      syntaxHighlight: 'prism',
+      rehypePlugins: [rehypeSlug, [rehypePrettyCode, { theme: 'github-dark' }]]
+    })
+    // sitemap()
+  ]
+})

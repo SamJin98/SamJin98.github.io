@@ -111,10 +111,12 @@
 }
 
 @layer base {
-  * {
+  *:not(.mdx-content, .mdx-content *) {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Remove MDX-specific styling from here as it's now in mdx.css */
