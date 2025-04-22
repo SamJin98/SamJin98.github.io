@@ -33,7 +33,7 @@ export default function ProjectsSection() {
                 </CardHeader>
                 
                 <CardContent className="flex-grow">
-                  <ul className="list-disc mt-4 ml-4 space-y-1 text-sm group-hover:space-y-2 transition-all duration-300">
+                  <ul className="list-disc mt-4 ml-4 space-y-1 text-sm transition-all duration-300">
                     {project.description.map((desc, i) => (
                       <motion.li
                         key={i}
@@ -55,8 +55,8 @@ export default function ProjectsSection() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center text-sm text-muted-foreground hover:text-purple-500 transition-colors group/link pt-4"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    // whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <Github className="h-4 w-4 mr-2 group-hover/link:rotate-12 transition-transform duration-300" />
                     View on GitHub 🔗

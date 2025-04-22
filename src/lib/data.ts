@@ -116,29 +116,6 @@ export const projects = [
       'Improved system performance with Pinecone-based multi-tenant data retrieval, cutting fetch times from 45s to 10s.',
       'Optimized backend infrastructure with Vercel, GitHub Actions, and LangChain, increasing query accuracy and supporting 8,000+ daily requests.'
     ]
-  },
-  {
-    title: 'Causal Coherence in Image Inpainting',
-    github: 'https://github.com/SamJin98/CSDS600-DeepGenerativeModels-CausalInference',
-    description: [
-      'Course project integrating causal reasoning into VAEs for enhanced image restoration.',
-      'Focus on combining deep generative models with structured causal models.'
-    ]
-  },
-  {
-    title: 'Enhancing Large-Scale Model Training',
-    github: 'https://github.com/SamJin98/CSDS451-DesigningHighPerformantSystemsforAI',
-    description: [
-      'Comparative study of custom FSDP implementations to scale large model training efficiently.',
-      'Analyzed memory usage and throughput trade-offs.'
-    ]
-  },
-  {
-    title: 'Recommendation System with ANN',
-    description: [
-      'Built a recommendation engine leveraging approximate nearest neighbor search.',
-      'Designed for scalability and performance in data mining contexts.'
-    ]
   }
 ]
 
