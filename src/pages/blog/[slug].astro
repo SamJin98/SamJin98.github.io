@@ -91,7 +91,6 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
 </Layout>
 
 <style>
-  /* 博客标题和日期使用现有字体 */
   .blog-header {
     font-family: 'Quicksand', 'Nunito', 'Poppins', sans-serif;
     font-weight: 400;
@@ -117,7 +116,6 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
     max-width: 65ch;
   }
 
-  /* 正文内容使用React官网类似的系统字体 */
   .prose :global(p) {
     margin-bottom: 1.5em;
     line-height: 1.8;
@@ -125,7 +123,6 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
       'Helvetica Neue', sans-serif;
   }
 
-  /* 标题保留特殊字体 */
   .prose :global(h2) {
     font-size: 1.75rem;
     margin-top: 2.5rem;
@@ -144,7 +141,6 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
     letter-spacing: 0.01em;
   }
 
-  /* 列表使用系统字体 */
   .prose :global(ul),
   .prose :global(ol) {
     margin-bottom: 1.5em;
@@ -168,7 +164,6 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
-  /* 链接使用系统字体 */
   .prose :global(a) {
     color: var(--color-primary);
     text-decoration: underline;
@@ -181,7 +176,6 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
     text-decoration: none;
   }
 
-  /* 引用使用系统字体 */
   .prose :global(blockquote) {
     border-left: 3px solid var(--color-border);
     padding-left: 1rem;
@@ -191,11 +185,3 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
       'Helvetica Neue', sans-serif;
   }
 </style>
-
-<!-- 添加 Google Fonts 链接 -->
-<!-- <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link
-  href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500&family=Archivo:wght@400;500&family=Inter:wght@400;500&family=Quicksand:wght@400;500;600&family=Nunito:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap"
-  rel="stylesheet"
-/> -->

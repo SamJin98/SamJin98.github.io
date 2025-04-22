@@ -27,6 +27,7 @@ const postsByYear = sortedPosts.reduce(
 
 // Get sorted years (descending)
 const years = Object.keys(postsByYear).sort((a, b) => parseInt(b) - parseInt(a))
+console.log(years.length)
 ---
 
 <Layout title="Blog">
@@ -77,6 +78,16 @@ const years = Object.keys(postsByYear).sort((a, b) => parseInt(b) - parseInt(a))
                     </div>
                   </MotionWrapper>
                 ))}
+                {yearIndex === years.length - 1 && (
+                  <MotionWrapper client:load delay={yearIndex * 0.2 + 1}>
+                    <div class="mt-12 mb-4 text-center">
+                      <p class="text-sm text-foreground">
+                        That's it. No more profound thoughts or digital breadcrumbs.
+                      </p>
+                      <p class="text-xs mt-1 text-foreground">Just the void staring back at you now.</p>
+                    </div>
+                  </MotionWrapper>
+                )}
               </div>
             </section>
           </MotionWrapper>
