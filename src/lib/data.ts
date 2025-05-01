@@ -1,6 +1,6 @@
 export const personalInfo = {
   name: 'Ruilin (Sam) Jin',
-  location: 'Cleveland, Ohio',
+  location: 'San Francisco Bay Area, California',
   email: 'sam_ruilin@hotmail.com', // You can add this if you want it public
   github: 'https://github.com/SamJin98', // Add your GitHub if public
   linkedin: 'https://www.linkedin.com/in/ruilinjin1998/' // Add your LinkedIn if public
