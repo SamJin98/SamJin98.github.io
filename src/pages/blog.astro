@@ -9,7 +9,8 @@ type BlogPost = CollectionEntry<'blog'>
 
 const posts = await getCollection('blog')
 const sortedPosts: BlogPost[] = posts.sort(
-  (a: BlogPost, b: BlogPost) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+  (a: BlogPost, b: BlogPost) =>
+    new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
 )
 
 // Group posts by year
@@ -42,10 +43,16 @@ console.log(years.length)
 
               <div class="space-y-1 pt-22 pl-10">
                 {postsByYear[year].map((post, index) => (
-                  <MotionWrapper client:load delay={yearIndex * 0.2 + index * 0.1}>
+                  <MotionWrapper
+                    client:load
+                    delay={yearIndex * 0.2 + index * 0.1}
+                  >
                     <div class="py-1">
                       <div class="flex flex-col mb-4">
-                        <a href={`/blog/${post.slug}`} class="inline-block hover:no-underline group">
+                        <a
+                          href={`/blog/${post.slug}`}
+                          class="inline-block hover:no-underline group"
+                        >
                           <h2 class="title-link text-xl md:text-2xl font-medium transition-all duration-200 text-foreground/80">
                             <span class="bg-left-bottom bg-gradient-to-r from-primary to-primary bg-[length:0%_2px] bg-no-repeat group-hover:bg-[length:100%_2px] transition-all duration-300 ease-out">
                               {post.data.title}
@@ -54,10 +61,13 @@ console.log(years.length)
                         </a>
                         <div class="flex items-center mt-1 flex-wrap gap-x-3 gap-y-1">
                           <time class="text-muted-foreground text-sm">
-                            {new Date(post.data.date).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric'
-                            })}
+                            {new Date(post.data.date).toLocaleDateString(
+                              'en-US',
+                              {
+                                month: 'short',
+                                day: 'numeric'
+                              }
+                            )}
                           </time>
 
                           {post.data.tags && post.data.tags.length > 0 && (
@@ -65,14 +75,18 @@ console.log(years.length)
                               {[...post.data.tags]
                                 .sort((a, b) => a.localeCompare(b))
                                 .map((tag: string) => (
-                                  <span class="tag text-xs px-2 py-0.5 rounded-full font-medium">{tag}</span>
+                                  <span class="tag text-xs px-2 py-0.5 rounded-full font-medium">
+                                    {tag}
+                                  </span>
                                 ))}
                             </div>
                           )}
                         </div>
 
                         {post.data.excerpt && (
-                          <p class="text-muted-foreground text-sm mt-2 line-clamp-2">{post.data.excerpt}</p>
+                          <p class="text-muted-foreground text-sm mt-2 line-clamp-2">
+                            {post.data.excerpt}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -82,9 +96,12 @@ console.log(years.length)
                   <MotionWrapper client:load delay={yearIndex * 0.2 + 1}>
                     <div class="mt-12 mb-4 text-center">
                       <p class="text-sm text-foreground">
-                        That's it. No more profound thoughts or digital breadcrumbs.
+                        That's it. No more profound thoughts or digital
+                        breadcrumbs.
                       </p>
-                      <p class="text-xs mt-1 text-foreground">Just the void staring back at you now.</p>
+                      <p class="text-xs mt-1 text-foreground">
+                        Just the void staring back at you now.
+                      </p>
                     </div>
                   </MotionWrapper>
                 )}

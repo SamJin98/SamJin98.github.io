@@ -32,7 +32,7 @@ I wanted to answer:
    Different layers contribute differently to output generation. I added logic to prune KV pairs in higher layers more aggressively — this provided a memory-speed tradeoff.
 
 3. **Speculative KV Reuse**
-   In speculative decoding (draft and target model), I worked on aligning KV caches so that reusable tokens wouldn’t have to be recomputed if verified.
+   In speculative decoding (draft and target model), I worked on aligning KV caches so that reusable tokens wouldn't have to be recomputed if verified.
 
 ---
 
@@ -57,8 +57,8 @@ I wanted to answer:
 This project taught me a lot about real-world LLM inference:
 
 - **Inference speed matters** as much as model accuracy, especially in production.
-- **You can’t optimize blindly** — you need ways to quantify the impact of changes, both on metrics and on final outputs.
-- **There’s always more fat to trim**, but the best gains come from understanding the system, not just tweaking knobs.
+- **You can't optimize blindly** — you need ways to quantify the impact of changes, both on metrics and on final outputs.
+- **There's always more fat to trim**, but the best gains come from understanding the system, not just tweaking knobs.
 
 ---
 
