@@ -65,7 +65,9 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
                 {[...post.data.tags]
                   .sort((a, b) => a.localeCompare(b))
                   .map((tag: string) => (
-                    <span class="tag text-xs px-2.5 py-1 rounded-full font-medium">{tag}</span>
+                    <span class="tag text-xs px-2.5 py-1 rounded-full font-medium">
+                      {tag}
+                    </span>
                   ))}
               </div>
             )
@@ -74,8 +76,10 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
 
         {
           post.data.excerpt && (
-            <div class="excerpt-container mb-10 p-6 border-l-4 border-accent/40 bg-secondary/5 rounded-r-lg">
-              <p class="text-lg font-medium text-foreground/90 leading-relaxed">{post.data.excerpt}</p>
+            <div class="excerpt-container mb-10 p-6 border-l-4 border-accent/100 bg-secondary/5 rounded-r-lg">
+              <p class="text-lg font-medium text-foreground/90 leading-relaxed">
+                {post.data.excerpt}
+              </p>
             </div>
           )
         }
@@ -119,8 +123,8 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
   .prose :global(p) {
     margin-bottom: 1.5em;
     line-height: 1.8;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
-      'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
 
   .prose :global(h2) {
@@ -145,8 +149,8 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
   .prose :global(ol) {
     margin-bottom: 1.5em;
     padding-left: 1.5em;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
-      'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
 
   .prose :global(li) {
@@ -161,15 +165,16 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
   }
 
   .prose :global(code) {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      monospace;
   }
 
   .prose :global(a) {
     color: var(--color-primary);
     text-decoration: underline;
     text-underline-offset: 0.2em;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
-      'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
 
   .prose :global(a:hover) {
@@ -181,7 +186,7 @@ const formattedDate = new Date(post.data.date).toLocaleDateString('en-US', {
     padding-left: 1rem;
     font-style: italic;
     margin: 1.5em 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
-      'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
 </style>

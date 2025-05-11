@@ -1,9 +1,10 @@
 // @ts-check
 import { defineConfig } from 'astro/config'
 import tailwindcss from '@tailwindcss/vite'
-// import sitemap from '@astrojs/sitemap'
+import sitemap from '@astrojs/sitemap'
 import rehypeSlug from 'rehype-slug'
 import rehypePrettyCode from 'rehype-pretty-code'
+import partytown from '@astrojs/partytown'
 
 import react from '@astrojs/react'
 
@@ -20,7 +21,12 @@ export default defineConfig({
     mdx({
       syntaxHighlight: 'prism',
       rehypePlugins: [rehypeSlug, [rehypePrettyCode, { theme: 'github-dark' }]]
+    }),
+    sitemap(),
+    partytown({
+      config: {
+        forward: ['dataLayer.push']
+      }
     })
-    // sitemap()
   ]
 })

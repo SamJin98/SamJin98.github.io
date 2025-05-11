@@ -8,7 +8,8 @@ interface Props {
   description?: string
 }
 
-const { title = 'Ruilin (Sam) Jin - Portfolio', description = 'My Portfolio' } = Astro.props
+const { title = 'Ruilin (Sam) Jin - Portfolio', description = 'My Portfolio' } =
+  Astro.props
 ---
 
 <!doctype html>
@@ -20,6 +21,17 @@ const { title = 'Ruilin (Sam) Jin - Portfolio', description = 'My Portfolio' } =
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0M79FQ0DWJ"
+    ></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || []
+      function gtag() {
+        dataLayer.push(arguments)
+      }
+      gtag('js', new Date())
+      gtag('config', 'G-0M79FQ0DWJ')
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -32,7 +44,9 @@ const { title = 'Ruilin (Sam) Jin - Portfolio', description = 'My Portfolio' } =
     />
     <ViewTransitions />
   </head>
-  <body class="min-h-screen bg-background font-sans antialiased selection:bg-purple-500/20 selection:text-purple-500">
+  <body
+    class="min-h-screen bg-background font-sans antialiased selection:bg-purple-500/20 selection:text-purple-500"
+  >
     <div
       class="fixed inset-0 -z-10 h-full w-full bg-background bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"
     >
@@ -62,7 +76,11 @@ const { title = 'Ruilin (Sam) Jin - Portfolio', description = 'My Portfolio' } =
   const applyTheme = () => {
     const currentTheme = localStorage.getItem('theme')
     // Use system preference only if no theme is stored or on initial load without storage
-    const themeToApply = currentTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    const themeToApply =
+      currentTheme ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light')
 
     if (themeToApply === 'dark') {
       document.documentElement.classList.add('dark')
