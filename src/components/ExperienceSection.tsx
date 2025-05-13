@@ -3,12 +3,25 @@ import TimelineItem from "./TimelineItem";
 import { Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 import MotionWrapper from "./MotionWrapper";
+import React, { useState, useRef } from "react";
 
 export default function ExperienceSection() {
+  const [showAll, setShowAll] = useState(false);
+  const displayedExperiences = showAll ? workExperience : workExperience.slice(0, 3);
+  const isButtonAtEnd = displayedExperiences.length === workExperience.length;
+  const hasAnimated = useRef(false);
+
+  const handleToggle = () => {
+    if (showAll) {
+      hasAnimated.current = true;
+    }
+    setShowAll((prev) => !prev);
+  };
+
   return (
     <section
       id="experience"
-      className="py-12 bg-gradient-to-b from-muted/20 to-background"
+      className="py-12"
     >
       <div className="container max-w-4xl mx-auto px-6 md:px-4">
         <MotionWrapper>
@@ -26,25 +39,25 @@ export default function ExperienceSection() {
           </h2>
         </MotionWrapper>
         <div className="mb-8">
-          {workExperience.map((job, index) => (
+          {displayedExperiences.map((job, index) => (
             <TimelineItem
               key={job.company + job.period}
               title={`${job.position} | ${job.company}`}
               subtitle={`${job.location}`}
               date={`${job.period}`}
-              isLast={index === workExperience.length - 1}
+              isLast={index === displayedExperiences.length - 1 && isButtonAtEnd}
               index={index}
             >
               <motion.div
-                className="mt-3 p-4 bg-background/80 backdrop-blur-sm backdrop-filter rounded-lg border border-purple-500/20 dark:bg-card/10 dark:border-purple-500/10 shadow-sm"
+                className="mt-3 p-4 bg-background/80 backdrop-blur-sm backdrop-filter rounded-lg border border-blue-400/20 dark:bg-card/10 dark:border-blue-400/10 shadow-sm"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 viewport={{ once: true }}
               >
                 <div className="flex items-center mb-3">
-                  <div className="h-6 w-6 flex items-center justify-center rounded-full bg-purple-500/10 mr-2">
-                    <Briefcase className="h-4 w-4 text-purple-500" />
+                  <div className="h-6 w-6 flex items-center justify-center rounded-full bg-blue-400/10 mr-2">
+                    <Briefcase className="h-4 w-4 text-blue-500" />
                   </div>
                   <h4 className="text-sm font-medium">Key Achievements</h4>
                 </div>
@@ -65,6 +78,50 @@ export default function ExperienceSection() {
               </motion.div>
             </TimelineItem>
           ))}
+          {!isButtonAtEnd ? (
+            <TimelineItem
+              title=""
+              subtitle=""
+              date=""
+              isLast={isButtonAtEnd}
+              index={displayedExperiences.length}
+            >
+              <div className="flex justify-start w-full mt-2">
+                <motion.button
+                  className="px-4 py-1 rounded-md border border-blue-400/30 bg-background/70 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:bg-blue-800/30 dark:text-blue-200 dark:border-blue-400 dark:hover:bg-blue-800/60 transition-colors cursor-pointer"
+                  onClick={handleToggle}
+                  aria-pressed={showAll}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {showAll ? "Show Less" : "Show All"}
+                </motion.button>
+              </div>
+            </TimelineItem>
+          ) : (
+            <div className="flex justify-start w-full mt-6">
+              <div className="pl-[40px]">
+                <motion.button
+                  className="px-4 py-1 rounded-md border border-blue-400/30 bg-background/70 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:bg-blue-800/30 dark:text-blue-200 dark:border-blue-400 dark:hover:bg-blue-800/60 transition-colors cursor-pointer"
+                  onClick={handleToggle}
+                  aria-pressed={showAll}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ 
+                    type: "animate",
+                    stiffness: 300,
+                    damping: 15,
+                    duration: 0.7, 
+                    delay: 0.3 
+                  }}
+                >
+                  {showAll ? "Show Less" : "Show All"}
+                </motion.button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>

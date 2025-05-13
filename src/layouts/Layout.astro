@@ -2,6 +2,7 @@
 import '../styles/global.css'
 import '../styles/mdx.css'
 import { ViewTransitions } from 'astro:transitions'
+import StarryBackground from '../components/StarryBackground'
 
 interface Props {
   title?: string
@@ -45,12 +46,8 @@ const { title = 'Ruilin (Sam) Jin - Portfolio', description = 'My Portfolio' } =
     <ViewTransitions />
   </head>
   <body
-    class="min-h-screen bg-background font-sans antialiased selection:bg-purple-500/20 selection:text-purple-500"
+    class="min-h-screen bg-background font-sans antialiased selection:bg-blue-500/20 selection:text-blue-500 dark:selection:bg-blue-500/30 dark:selection:text-blue-400"
   >
-    <div
-      class="fixed inset-0 -z-10 h-full w-full bg-background bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"
-    >
-    </div>
     <slot />
   </body>
 </html>
@@ -68,8 +65,10 @@ const { title = 'Ruilin (Sam) Jin - Portfolio', description = 'My Portfolio' } =
 
   if (theme === 'light') {
     document.documentElement.classList.remove('dark')
+    document.body.classList.remove('dark')
   } else {
     document.documentElement.classList.add('dark')
+    document.body.classList.add('dark')
   }
 
   // Function to apply the theme
@@ -84,8 +83,10 @@ const { title = 'Ruilin (Sam) Jin - Portfolio', description = 'My Portfolio' } =
 
     if (themeToApply === 'dark') {
       document.documentElement.classList.add('dark')
+      document.body.classList.add('dark')
     } else {
       document.documentElement.classList.remove('dark')
+      document.body.classList.remove('dark')
     }
   }
 

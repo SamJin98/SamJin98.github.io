@@ -9,7 +9,7 @@ export default function AwardsSection() {
   return (
     <section
       id="awards"
-      className="py-12 bg-gradient-to-b from-background to-muted/10"
+      className="py-12"
     >
       <div className="container max-w-4xl mx-auto px-6 md:px-4">
         <MotionWrapper>
@@ -20,43 +20,34 @@ export default function AwardsSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {awards.map((award, index) => (
-            <MotionWrapper key={award.name + award.date} delay={index * 0.1}>
-              <GlassCard className="p-4 dark:border-purple-500/10 hover:border-purple-500/30 transition-all duration-300 flex flex-col h-full">
-                <div className="flex items-center mb-2">
-                  <motion.div
-                    whileHover={{ rotate: 20 }}
-                    transition={{ type: "spring", stiffness: 500 }}
-                    className="flex items-center justify-center bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full p-1.5 mr-2"
-                  >
-                    <Trophy className="h-4 w-4 text-white" />
-                  </motion.div>
-                  <h3 className="font-medium">{award.name}</h3>
-                </div>
-                <p className="text-xs text-muted-foreground mb-1 pl-8">
-                  🏢 {award.issuer}
+            <motion.div
+              key={award.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 * index }}
+              viewport={{ once: true, margin: "-50px" }}
+              className="mb-4 md:mb-0"
+            >
+              <GlassCard className="p-4 dark:border-blue-500/10 hover:border-blue-400/30 transition-all duration-300 flex flex-col h-full">
+                <h3 className="font-medium mb-1">{award.title}</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {award.issuer} • {award.date}
                 </p>
-                <div className="flex flex-col space-y-2 mt-auto">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md">
-                      📅 {award.date}
-                    </span>
-                    <motion.span
-                      className="text-xs px-2 py-1 bg-purple-500/10 rounded-full"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      {award.position}
-                    </motion.span>
+                <p className="text-sm text-muted-foreground mt-auto">{award.description}</p>
+                {award.categories && award.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-3">
+                    {award.categories.map((category) => (
+                      <span
+                        key={category}
+                        className="text-xs px-2 py-1 bg-blue-400/10 rounded-full"
+                      >
+                        {category}
+                      </span>
+                    ))}
                   </div>
-                  <motion.span
-                    className="text-xs text-muted-foreground/80 bg-background/50 px-2 py-1 rounded-md w-fit"
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    {award.type === "International" ? "🌎 " : "🇮🇳 "}
-                    {award.type}
-                  </motion.span>
-                </div>
+                )}
               </GlassCard>
-            </MotionWrapper>
+            </motion.div>
           ))}
         </div>
       </div>
