@@ -6,6 +6,7 @@ interface TimelineItemProps {
   title: string;
   subtitle: string;
   date: string;
+  location?: string;
   isLast?: boolean;
   index?: number;
   children?: React.ReactNode;
@@ -15,6 +16,7 @@ export default function TimelineItem({
   title,
   subtitle,
   date,
+  location,
   isLast = false,
   index = 0,
   children,
@@ -60,6 +62,7 @@ export default function TimelineItem({
         >
           <h3 className="font-medium">{title}</h3>
           <p className="text-sm text-muted-foreground">{subtitle}</p>
+          {location && <p className="text-xs text-muted-foreground/70">{location}</p>}
           <p className="text-xs text-muted-foreground/70 mb-2">{date}</p>
         </motion.div>
         <motion.div

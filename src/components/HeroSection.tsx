@@ -28,7 +28,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section id="hero" className="py-16 md:py-24 relative overflow-hidden mt-12">
+    <section id="hero" className="md:pt-24 pb-8 relative overflow-hidden mt-12">
       <StarryBackground />
       <div className="container max-w-4xl mx-auto px-6 md:px-4 relative z-10">
         <motion.div
@@ -120,10 +120,10 @@ export default function HeroSection() {
         </motion.div>
 
         <MotionWrapper>
-          <div className="bg-gradient-to-r from-blue-500/10 to-sky-400/10 backdrop-blur-sm backdrop-filter p-4 rounded-lg border border-blue-400/20 dark:border-blue-500/10 shadow-sm">
-            <p className="text-muted-foreground pl-4 py-2 mb-2 relative">
+          <div className="bg-gradient-to-r from-blue-500/10 to-sky-400/10 backdrop-blur-sm backdrop-filter p-3 rounded-lg border border-blue-400/20 dark:border-blue-500/10 shadow-sm">
+            <p className="text-muted-foreground pl-4 py-1 mb-0 relative">
               <span className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-500 to-sky-400 rounded-full"></span>
-              🚀 Hi, I'm Sam Jin! I'm a Master's student in Computer Science at Case Western Reserve University, focusing on Artificial Intelligence. I earned my Bachelor's degree from Rensselaer Polytechnic Institute and spent two years as a full-stack developer at CREC Cloud Net. I'm especially passionate about machine learning and large language models, and I love exploring how AI can solve real-world problems.
+              Developer with a focus on LLMs, AI agents, and scalable backend systems.
             </p>
           </div>
         </MotionWrapper>

@@ -62,10 +62,10 @@ export default function ExperienceSection() {
                   <h4 className="text-sm font-medium">Key Achievements</h4>
                 </div>
                 <ul className="list-none ml-4 space-y-2 text-sm">
-                  {job.achievements.map((achievement, i) => (
+                  {job.achievements.slice(0, 4).map((achievement, i) => (
                     <motion.li
                       key={i}
-                      className="text-muted-foreground relative pl-6"
+                      className="text-foreground/90 relative pl-6 before:content-['•'] before:absolute before:left-0 before:text-blue-500 before:font-bold before:text-lg"
                       initial={{ opacity: 0, x: -10 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.3, delay: 0.1 * i }}

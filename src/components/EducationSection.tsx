@@ -21,16 +21,13 @@ export default function EducationSection() {
           {education.map((edu, index) => (
             <TimelineItem
               key={edu.institution}
-              title={`${edu.degree}`}
-              subtitle={`${edu.institution}`}
+              title={`${edu.institution}`}
+              subtitle={`${edu.degree}`}
               date={`${edu.period}`}
+              location={edu.location}
               isLast={index === education.length - 1}
               index={index}
             >
-              <p className="text-sm text-muted-foreground mb-3">
-                📍 {edu.location}
-              </p>
-
               {edu.achievements && edu.achievements.length > 0 && (
                 <motion.div
                   className="mt-3 p-4 bg-background/80 backdrop-blur-sm backdrop-filter rounded-lg border border-blue-400/20 dark:bg-card/10 dark:border-blue-400/10 shadow-sm"
@@ -49,7 +46,7 @@ export default function EducationSection() {
                     {edu.achievements.map((achievement, i) => (
                       <motion.li
                         key={i}
-                        className="text-muted-foreground relative pl-6"
+                        className="text-foreground/90 relative pl-6 before:content-['•'] before:absolute before:left-0 before:text-blue-500 before:font-bold before:text-lg"
                         initial={{ opacity: 0, x: -10 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: 0.1 * i }}

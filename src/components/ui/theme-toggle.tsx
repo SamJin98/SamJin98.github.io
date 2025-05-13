@@ -14,7 +14,15 @@ export default function ThemeToggle() {
     const isDark = document.documentElement.classList.contains("dark");
     const newTheme = isDark ? "light" : "dark";
 
+    // Toggle class on both documentElement (html) and body
     document.documentElement.classList.toggle("dark");
+    document.body.classList.toggle("dark");
+    
+    // Update localStorage to save preference
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('theme', newTheme);
+    }
+    
     setTheme(newTheme);
   };
 

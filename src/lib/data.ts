@@ -20,12 +20,10 @@ export const workExperience = [
     position: 'Research Assistant',
     period: 'Feb 2024 - May 2025',
     achievements: [
-      'Optimized inference efficiency of large language models through KV Cache pooling, attention selection, and speculative decoding enhancements.',
-      'Improved token generation performance and responsiveness by refining attention mechanisms.',
-      'Automated deployment pipeline to streamline research tool delivery and reduce manual workload.',
-      'Implemented secure authentication with JWT and university SSO for scalable, role-based access control.',
-      'Restructured vector database architecture to optimize data retrieval for multi-tenant educational content.',
-      'Enhanced AI agent accuracy for educational queries by integrating multi-source retrieval strategies.'
+      'Optimized LLM inference via KV Cache pooling and attention selection, improving generation speed by 30%',
+      'Enhanced AI agent accuracy for educational queries with multi-source retrieval strategies',
+      'Automated deployment pipeline, reducing research tool delivery time by 40%',
+      'Implemented secure JWT authentication with university SSO for role-based access'
     ]
   },
   {
@@ -34,11 +32,10 @@ export const workExperience = [
     position: 'Software Engineer',
     period: 'Jun 2021 - Aug 2023',
     achievements: [
-      'Built a text similarity system using BERT, reducing processing from 3 hours to 2 minutes with 95% accuracy.',
-      'Fine-tuned ChatGLM-6B using LoRA and P-Tuning for improved QA accuracy and satisfaction.',
-      'Streamlined Kafka-based streaming platform, reducing data processing costs by 60%.',
-      'Designed a Vue.js component library in a micro-frontend architecture, improving delivery speed by 40%.',
-      'Led a team of 11 in building a marketing system with 8 modules and 100+ pages in 3 months, slashing page load by 90%.'
+      'Built BERT-based text similarity system, reducing processing from 3 hours to 2 minutes with 95% accuracy',
+      'Fine-tuned ChatGLM-6B using LoRA, increasing domain-specific QA accuracy by 35%',
+      'Reduced data processing costs by 60% through Kafka streaming platform optimization',
+      'Led 11-person team in developing marketing system with 100+ pages, slashing page load time by 90%'
     ]
   },
   {
@@ -47,9 +44,9 @@ export const workExperience = [
     position: 'Research Assistant',
     period: 'Jan 2018 - Dec 2020',
     achievements: [
-      'Led threat assessment and policy formulation for software security using advanced analysis techniques.',
-      'Applied fuzz testing, symbolic execution, and static/dynamic analysis with AFL, Panda, IDA Pro, S2E.',
-      'Enhanced AFL fuzzing strategies, improving vulnerability detection rates.'
+      'Led software security threat assessment using fuzz testing and symbolic execution',
+      'Applied advanced analysis with AFL, Panda, IDA Pro, and S2E tools',
+      'Enhanced AFL fuzzing strategies, improving vulnerability detection by 25%'
     ]
   },
   {
@@ -58,9 +55,9 @@ export const workExperience = [
     position: 'Software Engineer Intern',
     period: 'Sep 2019 - Dec 2019',
     achievements: [
-      "Developed a prototype for IBM Watson's digital twin using React and GoLang with REST APIs.",
-      "Performed market and technical analysis for Watson's applications, generating $108k+ revenue insights.",
-      'Used Pandas and Tableau for data analysis and visualization in strategic planning.'
+      'Developed Watson digital twin prototype using React and GoLang with REST APIs',
+      'Performed market analysis for Watson applications, generating $108k+ revenue insights',
+      'Created data visualizations using Pandas and Tableau for strategic planning'
     ]
   }
 ]
