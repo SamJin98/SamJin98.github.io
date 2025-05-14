@@ -1,0 +1,141 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import GlassHeader from '@/components/GlassHeader'
+import { getCollection, type CollectionEntry } from 'astro:content'
+import { Image } from 'astro:assets'
+
+type Project = CollectionEntry<'projects'>
+
+const projects = await getCollection('projects')
+const sortedProjects = projects.sort(
+  (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+)
+
+// Group projects by year
+const projectsByYear = sortedProjects.reduce(
+  (acc, project) => {
+    const year = new Date(project.data.date).getFullYear().toString()
+    if (!acc[year]) {
+      acc[year] = []
+    }
+    acc[year].push(project)
+    return acc
+  },
+  {} as Record<string, Project[]>
+)
+
+// Get sorted years (descending)
+const years = Object.keys(projectsByYear).sort(
+  (a, b) => parseInt(b) - parseInt(a)
+)
+
+// Function to dynamically import images
+async function getProjectImage(imagePath: string) {
+  try {
+    // The imagePath now already includes the project subfolder
+    const imageUrl = `/src/content/projects/resources/${imagePath}`
+    return new URL(imageUrl, import.meta.url).href
+  } catch (error) {
+    console.error(`Failed to load image: ${imagePath}`, error)
+    return ''
+  }
+}
+---
+
+<Layout title="Projects">
+  <GlassHeader client:only="react" pathname={Astro.url.pathname} />
+  <div class="flex flex-col min-h-screen pt-24">
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-6xl">
+      <h1 class="text-3xl font-bold mb-8">Projects</h1>
+
+      {
+        years.length === 0 ? (
+          <p class="text-center text-muted-foreground">No projects found.</p>
+        ) : (
+          <div class="space-y-12">
+            {years.map(year => (
+              <div>
+                <h2 class="text-2xl font-bold mb-6">{year}</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                  {projectsByYear[year].map(project => (
+                    <a
+                      href={`/projects/${project.slug}`}
+                      class="group overflow-hidden rounded-lg relative bg-muted/20 border border-border/50 hover:border-border transition-all duration-300"
+                    >
+                      <div class="relative aspect-[16/9] overflow-hidden">
+                        <img
+                          src={`/src/content/projects/resources/${project.data.image}`}
+                          alt={project.data.title}
+                          class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
+                      </div>
+
+                      <div class="absolute bottom-0 left-0 right-0 p-5 text-white z-10">
+                        <h3 class="text-xl font-bold mb-2 group-hover:text-white transition-colors drop-shadow-md">
+                          {project.data.title}
+                        </h3>
+                        <p class="text-sm text-white/90 line-clamp-2 drop-shadow-md font-medium">
+                          {project.data.excerpt}
+                        </p>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                          {project.data.tags &&
+                            project.data.tags
+                              .slice(0, 2)
+                              .map((tag: string) => (
+                                <span class="bg-muted text-muted-foreground text-xs px-2.5 py-0.5 rounded-md">
+                                  {tag}
+                                </span>
+                              ))}
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      }
+    </main>
+  </div>
+</Layout>
+
+<style>
+  /* Additional styles for the cards if needed */
+  :root {
+    --card-hover-transform: translateY(-5px);
+  }
+
+  a.group {
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  a.group:hover {
+    transform: var(--card-hover-transform);
+    box-shadow:
+      0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Apply text contrast enhancement for better readability in all modes */
+  .drop-shadow-md {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .drop-shadow-md {
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Ensure text remains white in dark mode even on hover */
+    .group:hover .text-white {
+      color: white !important;
+    }
+  }
+</style>

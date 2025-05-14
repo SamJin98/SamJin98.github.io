@@ -5,19 +5,36 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // Define BASE navigation items for the main page
-const mainPageNavItems = [
+interface NavItem {
+  label: string;
+  href: string;
+  icon?: React.ReactNode;
+  divider?: boolean;
+}
+
+const mainPageNavItems: NavItem[] = [
   { label: "Home", href: "#hero", icon: <Home size={18} /> }, // Back to #hero
   { label: "Experience", href: "#experience" },
   { label: "Skills", href: "#skills" },
   { label: "Projects", href: "#projects" },
-  { label: "Education", href: "#education" },
-  { label: "Blog", href: "/blog" }, // Blog is now part of main page items
+  { label: "Education", href: "#education", divider: true },
+  { label: "All Projects", href: "/projects" }, // Added Projects Page link
+  { label: "Blog", href: "/blog" }, // Blog is now part of main page items with divider
 ];
 
 // Define navigation items specifically for the blog page
-const blogPageNavItems = [
+const blogPageNavItems: NavItem[] = [
   { label: "Home", href: "/", icon: <Home size={18} /> }, // Links back to main page
+  { label: "All Projects", href: "/projects" }, // Added Projects link to blog page nav
+
   { label: "Blog", href: "/blog" }, // Stays on blog page (can be used for active state)
+];
+
+// Define navigation items specifically for the projects page
+const projectsPageNavItems: NavItem[] = [
+  { label: "Home", href: "/", icon: <Home size={18} /> }, // Links back to main page
+  { label: "All Projects", href: "/projects" }, // Stays on projects page (can be used for active state)
+  { label: "Blog", href: "/blog" }, // Links to blog page
 ];
 
 // Define component props interface
@@ -35,13 +52,19 @@ export default function GlassHeader({ pathname }: GlassHeaderProps) { // Destruc
   const isHomePage = pathname === '/';
   const isBlogPage = pathname === '/blog';
   const isBlogPostPage = pathname.startsWith('/blog/') && pathname !== '/blog';
+  const isProjectsPage = pathname === '/projects';
+  const isProjectPostPage = pathname.startsWith('/projects/') && pathname !== '/projects';
 
   // Choose navigation items based on the current page
-  const navItems = isBlogPostPage 
-    ? blogPageNavItems
-    : isBlogPage 
-      ? blogPageNavItems 
-      : mainPageNavItems;
+  const navItems = isProjectPostPage 
+    ? projectsPageNavItems
+    : isProjectsPage 
+      ? projectsPageNavItems
+      : isBlogPostPage 
+        ? blogPageNavItems
+        : isBlogPage 
+          ? blogPageNavItems 
+          : mainPageNavItems;
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -57,7 +80,7 @@ export default function GlassHeader({ pathname }: GlassHeaderProps) { // Destruc
     // Estimate or calculate minWidth based on content. Adjust as needed.
     // We'll let the content define min-width naturally in scrolled state,
     // but need a value for the animation calculation.
-    const minWidthEstimate = 550; // Example: Estimate based on items + padding
+    const minWidthEstimate = 750; // Increased minimum width to cover all items
 
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -75,16 +98,16 @@ export default function GlassHeader({ pathname }: GlassHeaderProps) { // Destruc
           const currentWidth = maxWidth - (maxWidth - minWidthEstimate) * easeProgress;
 
           navElement.style.setProperty("width", `${Math.max(currentWidth, minWidthEstimate)}px`);
-          navElement.classList.remove("w-[80%]", "max-w-4xl"); // Let inline style take over
+          navElement.classList.remove("w-[85%]", "max-w-6xl"); // Let inline style take over
         } else {
           // Reset width when scrolled to top
           navElement.style.removeProperty("width");
-          navElement.classList.add("w-[80%]", "max-w-4xl"); // Re-apply initial width classes
+          navElement.classList.add("w-[85%]", "max-w-6xl"); // Re-apply initial width classes
         }
       } else {
         // Reset width styles on mobile
         navElement.style.removeProperty("width");
-        navElement.classList.remove("w-[80%]", "max-w-4xl");
+        navElement.classList.remove("w-[85%]", "max-w-6xl");
       }
 
       rafId = null; // Allow next frame request
@@ -221,8 +244,10 @@ export default function GlassHeader({ pathname }: GlassHeaderProps) { // Destruc
       });
 
       const heroIsObserved = sections.some(s => s.id === 'hero');
+      const heroElement = document.getElementById('hero');
       // Set active section, prioritizing 'hero' if visible or if nothing else is found
-      setActiveSection(currentActiveSection || (heroIsObserved && document.getElementById('hero')?.getBoundingClientRect()?.top >= 0 ? 'hero' : null));
+      setActiveSection(currentActiveSection || 
+        (heroIsObserved && heroElement && heroElement.getBoundingClientRect().top >= 0 ? 'hero' : null));
     };
 
     const timeoutId = setTimeout(checkInitialSection, 100);
@@ -242,14 +267,14 @@ export default function GlassHeader({ pathname }: GlassHeaderProps) { // Destruc
         ref={navRef}
         className={cn(
           "hidden md:flex fixed left-1/2 -translate-x-1/2 z-[100] transition-all duration-300 ease-in-out",
-          "items-center justify-center p-2 text-sm font-medium",
-          "w-[80%] max-w-4xl", // Initial width defined here
+          "items-center justify-center px-4 py-2 text-sm font-medium",
+          "w-[85%] max-w-6xl", // Further increased max-width and width percentage
           isScrolling
             ? "top-4 bg-component-bg/80 dark:bg-component-bg-dark/80 border border-border/10 rounded-full shadow-lg backdrop-blur-lg"
             : "top-6 bg-transparent" // Initial state: transparent background
         )}
       >
-        <div className="flex items-center gap-1"> {/* Reduced gap */} 
+        <div className="flex items-center gap-2"> {/* Increased gap */} 
           {navItems.map((item, index) => (
             <motion.a
               key={item.href}
@@ -259,8 +284,11 @@ export default function GlassHeader({ pathname }: GlassHeaderProps) { // Destruc
                 "relative px-3 py-1.5 rounded-full transition-colors duration-200 ease-in-out hover:text-foreground",
                 // Adjust active logic: 
                 // - On blog page, check href directly
+                // - On projects page, check href directly
                 // - On main page, check activeSection based on hash
-                (pathname === '/blog' ? pathname === item.href : activeSection === item.href.substring(1))
+                ((pathname === '/blog' && pathname === item.href) || 
+                 (pathname === '/projects' && item.href === '/projects') ||
+                 (activeSection === item.href.substring(1)))
                   ? "text-foreground font-semibold"
                   : "text-foreground/60",
                 isScrolling ? "hover:bg-background/50 dark:hover:bg-background-dark/50" : ""
@@ -272,8 +300,10 @@ export default function GlassHeader({ pathname }: GlassHeaderProps) { // Destruc
               whileTap={{ scale: 0.95 }}
             >
               {
-                // Adjust active pill logic
-                (pathname === '/blog' ? pathname === item.href : activeSection === item.href.substring(1)) && (
+                // Adjust active pill logic for both blog and projects pages
+                ((pathname === '/blog' && pathname === item.href) || 
+                 (pathname === '/projects' && item.href === '/projects') ||
+                 (activeSection === item.href.substring(1))) && (
                 <motion.span
                   className="absolute inset-0 bg-muted/50 rounded-full -z-10"
                   layoutId="activePill"
@@ -287,7 +317,22 @@ export default function GlassHeader({ pathname }: GlassHeaderProps) { // Destruc
                 {item.label}
               </span>
             </motion.a>
-          ))}
+          )).reduce((acc: React.ReactNode[], item, index) => {
+            // Add elements to the accumulator
+            acc.push(item);
+            
+            // Add divider after specific items
+            if (navItems[index]?.divider) {
+              acc.push(
+                <div 
+                  key={`divider-${index}`} 
+                  className="h-5 w-px bg-border/40 mx-1 dark:bg-border/30"
+                />
+              );
+            }
+            
+            return acc;
+          }, [])}
           {/* Theme Toggle integrated into the nav bar */} 
           <div className="pl-2"> {/* Add some padding */} 
              <ThemeToggle />
@@ -329,7 +374,9 @@ export default function GlassHeader({ pathname }: GlassHeaderProps) { // Destruc
                   className={cn(
                     "transition-colors hover:text-foreground py-2",
                      // Adjust active logic for mobile
-                    (pathname === '/blog' ? pathname === item.href : activeSection === item.href.substring(1))
+                    ((pathname === '/blog' && pathname === item.href) || 
+                     (pathname === '/projects' && item.href === '/projects') ||
+                     (activeSection === item.href.substring(1)))
                       ? "text-foreground font-semibold"
                       : "text-foreground/70"
                   )}
