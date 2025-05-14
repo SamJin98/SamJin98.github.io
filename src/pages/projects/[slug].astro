@@ -1,9 +1,10 @@
 ---
 import { getCollection } from 'astro:content'
 import { Image } from 'astro:assets'
-import type { CollectionEntry } from 'astro:content'
+import type { CollectionEntry, ImageMetadata } from 'astro:content'
 import Layout from '../../layouts/Layout.astro'
 import GlassHeader from '@/components/GlassHeader'
+import BackToTop from '@/components/BackToTop'
 
 interface Props {
   project: CollectionEntry<'projects'>
@@ -26,8 +27,13 @@ const formattedDate = new Date(project.data.date).toLocaleDateString('en-US', {
   day: 'numeric'
 })
 
-// Get the project image URL
-const projectImageSrc = `./resources/${project.data.image}`
+// Import all images from the projects/resources directory
+const imageFiles = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/content/projects/resources/**/*.{png,jpg,jpeg,gif}'
+)
+
+// Get the project image path
+const imagePath = `/src/content/projects/resources/${project.data.image}`
 ---
 
 <Layout title={project.data.title}>
@@ -59,9 +65,11 @@ const projectImageSrc = `./resources/${project.data.image}`
 
       <article>
         <div class="mb-8 rounded-xl overflow-hidden relative aspect-video">
-          <img
-            src={projectImageSrc}
+          <Image
+            src={imageFiles[imagePath]()}
             alt={project.data.title}
+            width={1200}
+            height={675}
             class="object-cover w-full h-full"
           />
           <div
@@ -134,8 +142,52 @@ const projectImageSrc = `./resources/${project.data.image}`
           <Content components={{}} />
         </div>
       </article>
+
+      <div class="mt-8 flex justify-between">
+        <a
+          href="/projects"
+          class="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="mr-1"
+          >
+            <path d="m15 18-6-6 6-6"></path>
+          </svg>
+          Back to Projects
+        </a>
+
+        <a
+          href="#top"
+          class="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          <span class="mr-1">Back to top</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m18 15-6-6-6 6"></path>
+          </svg>
+        </a>
+      </div>
     </main>
   </div>
+  <BackToTop client:only="react" />
 </Layout>
 
 <style>

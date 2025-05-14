@@ -2,6 +2,7 @@
 import Layout from '@/layouts/Layout.astro'
 import GlassHeader from '@/components/GlassHeader'
 import MotionWrapper from '@/components/MotionWrapper'
+import BackToTop from '@/components/BackToTop'
 import { motion } from 'framer-motion'
 import { getCollection, type CollectionEntry } from 'astro:content'
 
@@ -112,6 +113,7 @@ console.log(years.length)
       }
     </main>
   </div>
+  <BackToTop client:only="react" />
 </Layout>
 
 <style>
