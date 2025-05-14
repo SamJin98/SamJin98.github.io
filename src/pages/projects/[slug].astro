@@ -27,7 +27,7 @@ const formattedDate = new Date(project.data.date).toLocaleDateString('en-US', {
 })
 
 // Get the project image URL
-const projectImageSrc = `/src/content/projects/resources/${project.data.image}`
+const projectImageSrc = `./resources/${project.data.image}`
 ---
 
 <Layout title={project.data.title}>
