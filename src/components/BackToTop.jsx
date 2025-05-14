@@ -31,13 +31,13 @@ export default function BackToTop() {
       {isVisible && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-8 bg-accent/90 hover:bg-accent text-accent-foreground px-4 py-2 rounded-full shadow-lg transition-all duration-300 z-50 flex items-center gap-2 font-medium cursor-pointer"
+          className="fixed bottom-6 right-6 bg-accent/90 hover:bg-accent text-accent-foreground p-3 rounded-full shadow-lg transition-all duration-300 z-50"
           aria-label="Back to top"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -47,7 +47,6 @@ export default function BackToTop() {
           >
             <path d="m18 15-6-6-6 6" />
           </svg>
-          <span>TOP</span>
         </button>
       )}
     </>
