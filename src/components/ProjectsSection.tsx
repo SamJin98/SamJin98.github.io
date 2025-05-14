@@ -33,8 +33,8 @@ export default function ProjectsSection() {
   }, []);
 
   return (
-    <section id="projects" className="py-12 relative">
-      <div className="container max-w-4xl mx-auto px-6 md:px-4">
+    <section id="project" className="py-12 relative">
+      <div className="container max-w-4xl mx-auto px-6 md:px-4 pt-8">
         <MotionWrapper>
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-bold text-center md:text-left">

@@ -50,7 +50,7 @@ export default function SkillsSection() {
       id="skills"
       className="py-12"
     >
-      <div className="container max-w-4xl mx-auto px-6 md:px-4">
+      <div className="container max-w-4xl mx-auto px-6 md:px-4 pt-8">
         <MotionWrapper>
           <h2 className="text-2xl font-bold mb-8 text-center md:text-left">
             🛠️ Skills

@@ -16,7 +16,7 @@ const mainPageNavItems: NavItem[] = [
   { label: "Home", href: "#hero", icon: <Home size={18} /> }, // Back to #hero
   { label: "Experience", href: "#experience" },
   { label: "Skills", href: "#skills" },
-  { label: "Projects", href: "#projects" },
+  { label: "Projects", href: "#project" },
   { label: "Education", href: "#education", divider: true },
   { label: "All Projects", href: "/projects" }, // Added Projects Page link
   { label: "Blog", href: "/blog" }, // Blog is now part of main page items with divider
