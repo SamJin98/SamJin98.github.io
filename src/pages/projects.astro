@@ -1,6 +1,7 @@
 ---
 import Layout from '@/layouts/Layout.astro'
 import GlassHeader from '@/components/GlassHeader'
+import BackToTop from '@/components/BackToTop'
 import { getCollection, type CollectionEntry } from 'astro:content'
 import { Image } from 'astro:assets'
 
@@ -99,6 +100,7 @@ async function getProjectImage(imagePath: string) {
       }
     </main>
   </div>
+  <BackToTop client:only="react" />
 </Layout>
 
 <style>
