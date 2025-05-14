@@ -5,6 +5,7 @@ import sitemap from '@astrojs/sitemap'
 import rehypeSlug from 'rehype-slug'
 import rehypePrettyCode from 'rehype-pretty-code'
 import partytown from '@astrojs/partytown'
+import { rehypePrettyCodeOptions } from './src/utils/rehype-pretty-code-config.js'
 
 import react from '@astrojs/react'
 
@@ -19,8 +20,10 @@ export default defineConfig({
   integrations: [
     react(),
     mdx({
-      syntaxHighlight: 'prism',
-      rehypePlugins: [rehypeSlug, [rehypePrettyCode, { theme: 'github-dark' }]]
+      syntaxHighlight: 'shiki',
+      rehypePlugins: [rehypeSlug, [rehypePrettyCode, rehypePrettyCodeOptions]],
+      remarkPlugins: [],
+      extendMarkdownConfig: true
     }),
     sitemap(),
     partytown({
