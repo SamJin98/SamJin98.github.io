@@ -10,9 +10,13 @@ export const workExperience = [
   {
     company: 'ByteDance',
     location: 'San Francisco Bay Area, California',
-    position: 'Software Engineer',
+    position: 'Software Engineer - Lynx',
     period: 'Jun 2025 - Present',
-    achievements: ['Coming Soon!']
+    achievements: [
+      'Build AI tools to support and streamline Lynx development',
+      'Improve workflows with RAG, MCP, and code reasoning',
+      'Develop toward autonomous app building with agent-based systems'
+    ]
   },
   {
     company: 'Case Western Reserve University',
