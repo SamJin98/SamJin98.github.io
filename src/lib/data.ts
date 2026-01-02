@@ -3,7 +3,7 @@ export const personalInfo = {
   location: 'San Francisco Bay Area, California',
   email: 'sam_ruilin@hotmail.com', // You can add this if you want it public
   github: 'https://github.com/SamJin98', // Add your GitHub if public
-  linkedin: 'https://www.linkedin.com/in/ruilinjin1998/' // Add your LinkedIn if public
+  linkedin: 'https://www.linkedin.com/in/samjin98/' // Add your LinkedIn if public
 }
 
 export const workExperience = [
