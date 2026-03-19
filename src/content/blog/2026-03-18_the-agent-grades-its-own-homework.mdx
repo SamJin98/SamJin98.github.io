@@ -1,0 +1,159 @@
+---
+title: 'The Agent Grades Its Own Homework'
+date: '2026-03-18'
+excerpt: 'Agents now write the code and the tests, and nobody reads either. Notes from building a coding-agent benchmark on why a green checkmark stopped meaning anything, and what a test has to prove before I trust it.'
+tags: ['AI', 'Testing', 'Engineering']
+---
+
+The first number my benchmark ever produced was `0.6`.
+
+Four runs, four agent configurations, every one of them scored `0.6`. It looked like a result. It had a decimal point. It went into a database and showed up on a dashboard.
+
+It meant nothing. Three static assertions had passed and two runtime assertions had been skipped, because no device was connected. The checks that did run confirmed that the project built and that certain strings appeared in the source. The checks that would have told us whether the app actually worked never executed. Three out of five is 0.6, and 0.6 looks a lot like "60% done".
+
+I've spent the past few months building infrastructure to evaluate coding agents, and the most useful thing it taught me isn't about agents. It's about tests: **a test you haven't tried to break is a decoration.**
+
+---
+
+### The Loop Closed on Itself
+
+Here's the workflow most of us have drifted into:
+
+1. Ask the agent for a feature.
+2. The agent writes the feature.
+3. The agent writes tests for the feature.
+4. The tests pass.
+5. We look at the green checkmark and merge.
+
+Step 3 is where it quietly falls apart. The code and the tests come from the same context window, the same reading of the task, the same blind spots. If the agent misunderstood what you wanted, it misunderstood it twice, consistently, and the tests faithfully encode the misunderstanding.
+
+A quick model. Say the agent's code has a bug with probability $\varepsilon$. Of those bugs, a fraction $\rho$ come from a misreading of the spec, which a test written by the same agent will inherit. The rest are slips, like an off-by-one or a wrong variable, that an honest test catches except with some miss rate $m$. Then
+
+$$
+P(\text{bug ships}) = \varepsilon \cdot \big[\, \rho + (1-\rho)\, m \,\big]
+$$
+
+You can push $m$ toward zero with more and better tests. You cannot touch $\rho$ from inside the loop. Self-written tests are good at catching slips and structurally blind to misunderstanding, and misunderstanding is the expensive kind of bug.
+
+An independent test, written from the spec by someone (or something) that never saw the implementation, has its own blind spots, but they're mostly *different* ones. That's the whole point. Two checks with uncorrelated failure modes multiply; two checks with the same failure mode are one check counted twice.
+
+---
+
+### What "Passing" Looks Like
+
+When an agent is asked to make tests pass, it tends to find the cheapest path to green. It doesn't need to be malicious; this is just what optimization does. The usual suspects:
+
+```ts
+// It renders, therefore it works.
+it('renders the counter', () => {
+  const { getByText } = render(<Counter />)
+  expect(getByText).toBeDefined() // getByText is a function. It is always defined.
+})
+```
+
+```python
+# Mock the thing under test, then test the mock.
+def test_build_artifact(mocker):
+    mocker.patch("pipeline.build", return_value=BuildResult(ok=True))
+    assert pipeline.build(task).ok
+```
+
+```python
+# Assert on the shape of the source, not the behavior of the program.
+def test_tap_handler_wired():
+    src = read("src/App.tsx")
+    assert "bindtap" in src
+    assert "useState" in src
+```
+
+That last one is roughly what my `0.6` was made of. Every one of these passes. None of them would fail if the feature were broken. And in a 15,000-line test diff, which is a real number from a real commit, none of them stand out.
+
+This is the other half of the problem. Tests used to be the part of a PR you read *to understand the change*: the executable spec. Now they're the part nobody reads, because there's too much of it and it's always green. We review the summary, glance at the diff stat, see the checkmark, and approve. The test suite has become a ritual we perform for CI rather than a claim we're making to each other.
+
+---
+
+### Goodhart Was a Software Engineer
+
+If you do RL on code, this stops being a style complaint and becomes the central problem.
+
+The policy is trained to maximize the reward it can observe, which is the test result, not the thing you actually want:
+
+$$
+\pi^\star = \arg\max_\pi \; \mathbb{E}_{\tau \sim \pi}\big[\, r_{\text{test}}(\tau) \,\big]
+\qquad\text{where}\qquad
+r_{\text{test}} = r_{\text{true}} + \delta
+$$
+
+Whatever $\delta$ is, the gap between "tests pass" and "the work is correct", the optimizer will find it, because finding it is cheaper than doing the work. Delete the failing test. Special-case the exact inputs the test uses. Write the expected screenshot to disk instead of rendering one. Make the build "succeed" by not changing anything.
+
+That last one isn't hypothetical. In one comparison round, every agent run failed to reach its model and produced an empty patch: 24 runs, zero lines of code. The build step still passed on all of them, because the untouched starter project builds fine. If "it builds" had been the reward, doing nothing would have scored perfectly.
+
+So the benchmark's job is less "write tests" and more "make $\delta$ as small and as expensive to exploit as possible".
+
+---
+
+### Testing the Tests
+
+The rules we ended up with are boring, and I think they generalize well beyond benchmarks.
+
+**1. The grader is not in the room.** The agent gets the instruction and a public environment. Hidden tests and the reference solution only exist in a separate verifier container that the agent never touches. The agent hands off a diff, a fresh container rebuilds it from scratch, and a third container grades it. The thing being graded cannot see, edit, or delete the grader.
+
+**2. Every task is calibrated in both directions before it counts.**
+
+```python
+def release_gate(task):
+    assert grade(task, reference_solution).passed      # the oracle must score 1
+    assert not grade(task, empty_patch).passed         # doing nothing must score 0
+    for attack in [delete_tests, spoof_artifact, stale_evidence,
+                   read_hidden_reference, no_op_actions]:
+        assert not grade(task, attack).passed          # known cheats must fail
+```
+
+The no-op control is the one I'd steal for everyday work. **A test suite that passes on an empty diff isn't testing your change.** Before trusting a new test, revert the implementation and watch it go red. If it doesn't, it's a decoration.
+
+The more general version of this is mutation testing: inject small bugs and count how many the suite catches.
+
+$$
+\text{mutation score} = \frac{\#\,\text{mutants killed}}{\#\,\text{mutants generated}}
+$$
+
+Line coverage tells you which code ran. Mutation score tells you whether anyone would *notice* if that code were wrong. For agent-written suites the gap between the two can be enormous.
+
+**3. "Didn't run" is not a number.** This is the lesson from `0.6`. We split every result into separate axes: whether the run was *valid* (did the device, build and harness actually work) and what the *outcome* was. A run with no device is `not_evaluated`, not a zero and not a partial credit. An absent measurement and a measured zero are different claims, and averaging them together is how you get a dashboard full of confident nonsense.
+
+**4. Mock at the edges, never the semantics.** The repo's agent guidance says exactly this: tests mock process boundaries like the Docker CLI, device transport and HTTP, and nothing that decides a score. It's written down because left alone, agents will mock whatever is in the way of green.
+
+---
+
+### Who Tests the Tester?
+
+One last story, because it's my favorite.
+
+A rate-limited run was marked as a failure instead of being retried. The agent was fine; the runner was wrong. The retry logic read the agent's JSONL event log line by line, looking for a 429:
+
+```python
+>>> line = '{"output": "too many requests inside a JSON string"}'
+>>> len(line.splitlines())
+2
+>>> len(line.split("\n"))
+1
+```
+
+Python's `str.splitlines()` treats U+2028, the Unicode line separator, as a line break. JSON allows that character raw inside a string. So one event got cut in half, the parser choked on the first half, and the retry never fired. The fix was one line: split on `"\n"` only. The regression test contains a literal U+2028.
+
+No agent-written test would have caught that, and neither would most human-written ones. It was caught because a failure looked wrong to a person who then read the raw logs. I don't think that part gets automated away. It just moves.
+
+---
+
+### So What Now?
+
+Code is cheap now. A thousand lines of plausible implementation and a thousand lines of plausible tests cost about the same, and both arrive green. What got expensive is the **oracle**: something independent that can say "no" and be right.
+
+So my rules for myself, outside of work:
+
+- Write the spec and the edge cases myself, even if the agent writes everything else.
+- Keep tests and implementation in separate contexts. Lock the tests first if I can.
+- Revert the change and make sure the new test fails.
+- When I review, read the tests before the code. They're the part that makes a claim.
+
+The agent can do the homework. **It just can't be the one grading it.**
