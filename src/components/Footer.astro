@@ -1,0 +1,29 @@
+---
+import { personalInfo } from '@/lib/data'
+
+const year = new Date().getFullYear()
+---
+
+<footer
+  class="border-t py-8 flex items-center justify-between text-sm text-muted-foreground"
+>
+  <span>© {year} Sam Jin</span>
+  <div class="flex gap-4">
+    <a
+      href={personalInfo.github}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="hover:text-foreground transition-colors">GitHub</a
+    >
+    <a
+      href={personalInfo.linkedin}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="hover:text-foreground transition-colors">LinkedIn</a
+    >
+    <a
+      href={`mailto:${personalInfo.email}`}
+      class="hover:text-foreground transition-colors">Email</a
+    >
+  </div>
+</footer>

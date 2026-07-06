@@ -10,8 +10,10 @@ export const workExperience = [
   {
     company: 'ByteDance',
     location: 'San Francisco Bay Area, California',
-    position: 'Software Engineer - Lynx',
+    position: 'AI Software Engineer',
     period: 'Jun 2025 - Present',
+    summary:
+      'Building AI agents that help developers write <a href="https://lynxjs.org/" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline underline-offset-4">Lynx</a> more effectively, and training models to write Lynx code.',
     achievements: [
       'Build AI tools to support and streamline Lynx development',
       'Improve workflows with RAG, MCP, and code reasoning',
@@ -23,6 +25,8 @@ export const workExperience = [
     location: 'Cleveland, Ohio',
     position: 'Research Assistant',
     period: 'Feb 2024 - May 2025',
+    summary:
+      'Researched LLM inference optimization with KV-cache pooling and attention selection, and built multi-source retrieval for an educational AI agent.',
     achievements: [
       'Optimized LLM inference via KV Cache pooling and attention selection, improving generation speed by 30%',
       'Enhanced AI agent accuracy for educational queries with multi-source retrieval strategies',
@@ -35,6 +39,8 @@ export const workExperience = [
     location: 'Beijing, China',
     position: 'Software Engineer',
     period: 'Jun 2021 - Aug 2023',
+    summary:
+      'Built NLP systems for document matching and domain question answering, and led a team developing a large marketing platform.',
     achievements: [
       'Built BERT-based text similarity system, reducing processing from 3 hours to 2 minutes with 95% accuracy',
       'Fine-tuned ChatGLM-6B using LoRA, increasing domain-specific QA accuracy by 35%',
@@ -47,6 +53,8 @@ export const workExperience = [
     location: 'Beijing, China',
     position: 'Research Assistant',
     period: 'Jan 2018 - Dec 2020',
+    summary:
+      'Software security research on vulnerability discovery with fuzzing and symbolic execution.',
     achievements: [
       'Led software security threat assessment using fuzz testing and symbolic execution',
       'Applied advanced analysis with AFL, Panda, IDA Pro, and S2E tools',
@@ -58,6 +66,8 @@ export const workExperience = [
     location: 'New York',
     position: 'Software Engineer Intern',
     period: 'Sep 2019 - Dec 2019',
+    summary:
+      'Prototyped a digital twin for Watson with React and Go, and supported market analysis for the Watson product line.',
     achievements: [
       'Developed Watson digital twin prototype using React and GoLang with REST APIs',
       'Performed market analysis for Watson applications, generating $108k+ revenue insights',
@@ -86,60 +96,4 @@ export const education = [
   }
 ]
 
-export const skills = {
-  programmingLanguages: [
-    'Python',
-    'TypeScript',
-    'Swift',
-    'Go',
-    'C++',
-    'SQL',
-    'Java'
-  ],
-  frontendDevelopment: ['Vue.js', 'React.js', 'Next.js', 'SwiftUI'],
-  backendDevelopment: ['Flask', 'FastAPI', 'Node.js', 'Gin'],
-  databaseAndStorage: [
-    'Pinecone',
-    'MySQL',
-    'PostgreSQL',
-    'MongoDB',
-    'DynamoDB',
-    'AWS S3'
-  ],
-  cloudAndDevOps: ['Docker', 'Kafka', 'AWS', 'Git'],
-  toolsAndServices: ['PyTorch', 'MLFlow', 'TensorFlow']
-}
-
-export const projects = [
-  {
-    title: 'Hello Algo: Data Structures and Algorithms Crash Course',
-    github: 'https://www.hello-algo.com/',
-    showStars: true,
-    description: [
-      "Contributed to 'Hello Algo,' an open-source project providing a beginner-friendly crash course on data structures and algorithms.",
-      'Enhanced learning materials with animated illustrations and code implementations in multiple programming languages, including Python, Java, C++, JavaScript, and more',
-      'Collaborated with a global community to improve content accessibility and educational value.'
-    ]
-  },
-  {
-    title: 'AI4EDU, AI-Powered Study Assistant',
-    github: 'https://github.com/os-computational-economics/ai4edu-ios',
-    description: [
-      'Built a cross-platform AI-powered study assistant featuring both a web app and an iOS mobile app that transforms lecture notes and class materials into personalized AI-powered study tools',
-      'Leveraged large language models to analyze raw content and generate tailored learning experiences for students on the go.',
-      "Integrated backend with CWRU's SSO and JWT-based authentication; implemented RBAC access control to ensure secure user management.",
-      'Improved system performance with Pinecone-based multi-tenant data retrieval, cutting fetch times from 45s to 10s.',
-      'Optimized backend infrastructure with Vercel, GitHub Actions, and LangChain, increasing query accuracy and supporting 8,000+ daily requests.'
-    ]
-  }
-]
-
-export const awards = [
-  // {
-  //   name: 'IEEE YESIST12 Hackathon',
-  //   issuer: 'IEEE',
-  //   date: 'Sep 2022',
-  //   type: 'International',
-  //   position: 'Second Place'
-  // }
-]
+// Project pages are driven by the content collection in src/content/projects/.

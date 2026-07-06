@@ -1,0 +1,83 @@
+---
+interface Props {
+  pathname: string
+}
+
+const { pathname } = Astro.props
+
+const links = [
+  { label: 'Writing', href: '/blog' },
+  { label: 'Projects', href: '/projects' }
+]
+
+const isActive = (href: string) =>
+  pathname === href || pathname.startsWith(href + '/')
+---
+
+<header class="flex items-center justify-between py-10">
+  <a href="/" class="font-medium text-foreground hover:text-accent transition-colors">
+    Sam Jin
+  </a>
+  <nav class="flex items-center gap-5 text-sm">
+    {
+      links.map(link => (
+        <a
+          href={link.href}
+          class:list={[
+            'transition-colors hover:text-foreground',
+            isActive(link.href)
+              ? 'text-foreground'
+              : 'text-muted-foreground'
+          ]}
+        >
+          {link.label}
+        </a>
+      ))
+    }
+    <button
+      id="theme-toggle"
+      type="button"
+      aria-label="Toggle theme"
+      class="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+    >
+      <svg
+        class="hidden dark:block"
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="4"></circle>
+        <path
+          d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+        ></path>
+      </svg>
+      <svg
+        class="block dark:hidden"
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+    </button>
+  </nav>
+</header>
+
+<script>
+  document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark')
+    localStorage.setItem('theme', isDark ? 'dark' : 'light')
+  })
+</script>

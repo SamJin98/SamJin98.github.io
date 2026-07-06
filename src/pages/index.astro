@@ -1,24 +1,184 @@
 ---
 import Layout from '@/layouts/Layout.astro'
-import GlassHeader from '@/components/GlassHeader'
-import HeroSection from '@/components/HeroSection'
-import ExperienceSection from '@/components/ExperienceSection'
-import SkillsSection from '@/components/SkillsSection'
-import ProjectsSection from '@/components/ProjectsSection'
-import AwardsSection from '@/components/AwardsSection'
-import EducationSection from '@/components/EducationSection'
-import Footer from '@/components/Footer'
+import { getCollection } from 'astro:content'
+import { personalInfo, workExperience, education } from '@/lib/data'
+
+const posts = (await getCollection('blog'))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 5)
+
+const projects = (await getCollection('projects')).sort(
+  (a, b) =>
+    Number(b.data.featured ?? false) - Number(a.data.featured ?? false) ||
+    b.data.date.getTime() - a.data.date.getTime()
+)
+
+// Star count for hello-algo, fetched at build time; fails silently
+let helloAlgoStars: string | null = null
+try {
+  const res = await fetch('https://api.github.com/repos/krahets/hello-algo')
+  if (res.ok) {
+    const repo = await res.json()
+    helloAlgoStars = new Intl.NumberFormat('en', {
+      notation: 'compact'
+    }).format(repo.stargazers_count)
+  }
+} catch {
+  // offline builds render without the star count
+}
+
+function yearRange(period: string): string {
+  const years = period.match(/\d{4}/g) ?? []
+  const start = years[0] ?? ''
+  if (/present/i.test(period)) return `${start} –`
+  const end = years[1] ?? ''
+  if (!end || end === start) return start
+  return `${start} – ${end.slice(2)}`
+}
+
+const postDate = (date: Date) =>
+  date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 ---
 
 <Layout>
-  <GlassHeader client:only="react" pathname={Astro.url.pathname} />
-  <main class="min-h-screen">
-    <HeroSection client:only="react" />
-    <ExperienceSection client:only="react" />
-    <SkillsSection client:only="react" />
-    <ProjectsSection client:only="react" />
-    <!-- <AwardsSection client:only="react" /> -->
-    <EducationSection client:only="react" />
-  </main>
-  <Footer client:only="react" />
+  <section>
+    <h1 class="text-2xl font-semibold">{personalInfo.name}</h1>
+    <p class="mt-4 text-muted-foreground leading-relaxed">
+      I'm a software engineer at ByteDance, where I build AI agents and
+      tooling for{' '}<a
+        href="https://lynxjs.org/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-accent hover:underline underline-offset-4">Lynx</a
+      >{' '}developers. Before that, I researched LLM inference optimization
+      at Case Western Reserve University.
+    </p>
+    <p class="mt-4 text-sm font-mono text-faint">
+      {personalInfo.location.replace(', California', '')}{' · '}<a
+        href={personalInfo.github}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-accent hover:underline underline-offset-4">GitHub</a
+      >{' · '}<a
+        href={personalInfo.linkedin}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-accent hover:underline underline-offset-4">LinkedIn</a
+      >{' · '}<a
+        href={`mailto:${personalInfo.email}`}
+        class="text-accent hover:underline underline-offset-4">Email</a
+      >
+    </p>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="text-xs font-mono font-medium uppercase tracking-widest text-faint">
+      Experience
+    </h2>
+    <div class="mt-4 space-y-5 text-sm">
+      {
+        workExperience.map(job => (
+          <div class="grid sm:grid-cols-[6.5rem_1fr] gap-x-2 gap-y-0.5">
+            <span class="font-mono text-faint text-[0.8125rem] leading-6">
+              {yearRange(job.period)}
+            </span>
+            <div>
+              <p class="leading-6">
+                {job.position}<span class="text-muted-foreground">
+                  {' '}
+                  · {job.company}
+                </span>
+              </p>
+              <p
+                class="mt-1 text-muted-foreground leading-relaxed"
+                set:html={job.summary}
+              />
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="text-xs font-mono font-medium uppercase tracking-widest text-faint">
+      Projects
+    </h2>
+    <div class="mt-4 space-y-5">
+      {
+        projects.map(project => (
+          <div>
+            <div class="flex items-baseline gap-2.5">
+              <a
+                href={`/projects/${project.id}`}
+                class="text-sm font-medium text-accent hover:underline underline-offset-4"
+              >
+                {project.data.title}
+              </a>
+              {project.id.includes('hello-algo') && helloAlgoStars && (
+                <span class="text-xs font-mono text-faint">
+                  ★ {helloAlgoStars}
+                </span>
+              )}
+            </div>
+            <p class="mt-1 text-sm text-muted-foreground line-clamp-2">
+              {project.data.excerpt}
+            </p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="text-xs font-mono font-medium uppercase tracking-widest text-faint">
+      Writing
+    </h2>
+    <div class="mt-4 space-y-2.5">
+      {
+        posts.map(post => (
+          <div class="flex items-baseline justify-between gap-4">
+            <a
+              href={`/blog/${post.id}`}
+              class="text-sm hover:text-accent transition-colors"
+            >
+              {post.data.title}
+            </a>
+            <span class="text-xs font-mono text-faint whitespace-nowrap">
+              {postDate(post.data.date)}
+            </span>
+          </div>
+        ))
+      }
+    </div>
+    <a
+      href="/blog"
+      class="mt-4 inline-block text-sm text-accent hover:underline underline-offset-4"
+    >
+      All posts →
+    </a>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="text-xs font-mono font-medium uppercase tracking-widest text-faint">
+      Education
+    </h2>
+    <div class="mt-4 space-y-2.5 text-sm">
+      {
+        education.map(school => (
+          <div class="grid sm:grid-cols-[6.5rem_1fr] gap-x-2 gap-y-0.5">
+            <span class="font-mono text-faint text-[0.8125rem] leading-6">
+              {yearRange(school.period)}
+            </span>
+            <span class="leading-6">
+              {school.degree}<span class="text-muted-foreground">
+                {' '}
+                · {school.institution}
+              </span>
+            </span>
+          </div>
+        ))
+      }
+    </div>
+  </section>
 </Layout>

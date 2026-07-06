@@ -1,20 +1,26 @@
-# Sam Jin's Portfolio
+# samjin98.github.io
 
-A modern, responsive portfolio website built with **Astro**, **React**, and **Tailwind CSS**, featuring elegant glassmorphism effects and smooth animations.
+Personal site and blog, built with [Astro](https://astro.build/) and [Tailwind CSS](https://tailwindcss.com/).
 
-## ✨ Features
+Fully static, with no client-side framework. The only JavaScript on the page is the theme toggle.
 
-- **Modern Design** – Clean, professional layout with elegant glassmorphism
-- **Animations** – Smooth transitions and interactive UI via Framer Motion
-- **Dark/Light Mode** – Smooth theme switching with system preference detection
-- **Fully Responsive** – Optimized for mobile, tablet, and desktop
-- **Blog Integration** – Personal blog section with MDX support
-- **SEO Friendly** – Structured content and meta tags for better visibility
+## Development
 
-## 🙏 Acknowledgments
+Requires Node 22+ (see `.nvmrc`).
 
-- [Astro](https://astro.build/)
-- [React](https://reactjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Framer Motion](https://www.framer.com/motion/)
-- [Lucide Icons](https://lucide.dev/)
+```sh
+npm install
+npm run dev      # start dev server
+npm run build    # build to ./dist
+npm run preview  # preview the production build
+```
+
+## Writing
+
+Posts live in `src/content/blog/`, projects in `src/content/projects/`, as MDX files named `YYYY-MM-DD_slug.mdx`. The filename (minus extension) becomes the URL.
+
+Resume data (experience, education) lives in `src/lib/data.ts`.
+
+## Deployment
+
+Pushes to `main` deploy to GitHub Pages via `.github/workflows/deploy.yml`.
