@@ -114,6 +114,12 @@
   border-bottom: 1px solid var(--border);
 }
 
+.prose .tml-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.25rem;
+}
+
 .prose :not(pre) > code {
   font-family: var(--font-mono);
   font-size: 0.875em;
