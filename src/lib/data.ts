@@ -13,11 +13,13 @@ export const workExperience = [
     position: 'AI Software Engineer',
     period: 'Jun 2025 - Present',
     summary:
-      'Building AI agents that help developers write <a href="https://lynxjs.org/" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline underline-offset-4">Lynx</a> more effectively, and training models to write Lynx code.',
+      'Building AI for <a href="https://lynxjs.org/" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline underline-offset-4">Lynx</a>: an internal coding agent and knowledge base for Lynx developers, a Lynx code-generation benchmark, and RL training for models that write better Lynx code.',
     achievements: [
-      'Build AI tools to support and streamline Lynx development',
-      'Improve workflows with RAG, MCP, and code reasoning',
-      'Develop toward autonomous app building with agent-based systems'
+      'Build the Lynx knowledge base that powers the team\'s AI tools',
+      'Develop our internal agent for Lynx development, using RAG, MCP, and code reasoning',
+      'Build a Lynx code-generation benchmark end to end: infrastructure, case generation, and evaluation',
+      'Train models to generate better Lynx code with reinforcement learning',
+      'Work toward autonomous app building with agent-based systems'
     ]
   },
   {
