@@ -10,6 +10,7 @@
   --faint-foreground: oklch(0.66 0.012 95);
   --border: oklch(0.903 0.012 95);
   --accent: oklch(0.488 0.217 264);
+  --selection: color-mix(in oklch, var(--accent) 22%, transparent);
 }
 
 .dark {
@@ -20,6 +21,7 @@
   --faint-foreground: oklch(0.5 0 0);
   --border: oklch(1 0 0 / 12%);
   --accent: oklch(0.707 0.143 254);
+  --selection: color-mix(in oklch, var(--accent) 38%, transparent);
 }
 
 @theme inline {
@@ -53,7 +55,7 @@
   }
 
   ::selection {
-    background-color: var(--muted);
+    background-color: var(--selection);
   }
 
   a:focus-visible,
