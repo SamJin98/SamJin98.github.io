@@ -47,6 +47,12 @@ const {
         }
         // Same pick on both pages: the page being opened, else the one being left
         const find = p => document.querySelector(`[data-vt="${CSS.escape(p)}"]`)
+        // A title scrolled out of view would fly in from off screen, so it
+        // only moves when it's on screen on both pages
+        const visible = el => {
+          const r = el.getBoundingClientRect()
+          return r.bottom > 0 && r.top < innerHeight
+        }
         const name = el => {
           el.style.viewTransitionName = 'page-title'
           named = el
@@ -54,9 +60,9 @@ const {
         const pair = (from, to) => {
           clear()
           let el = find(path(to))
-          if (el) return name(el), 'grow'
+          if (el) return visible(el) ? (name(el), 'grow') : undefined
           el = find(path(from))
-          if (el) return name(el), 'shrink'
+          if (el) return visible(el) ? (name(el), 'shrink') : undefined
         }
         // Where the swap goes is handed to the next page through
         // sessionStorage: on a back/forward restored from the page cache,
@@ -71,8 +77,8 @@ const {
           clear()
           const to = e.activation?.entry?.url ?? lastClicked
           if (!e.viewTransition || !to) return
-          pair(location.href, to)
-          sessionStorage.setItem('vt', JSON.stringify([location.href, to]))
+          if (pair(location.href, to))
+            sessionStorage.setItem('vt', JSON.stringify([location.href, to]))
         })
         addEventListener('pagereveal', e => {
           clear()
