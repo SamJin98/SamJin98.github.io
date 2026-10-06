@@ -9,7 +9,7 @@
   --muted-foreground: oklch(0.51 0.012 95);
   --faint-foreground: oklch(0.66 0.012 95);
   --border: oklch(0.903 0.012 95);
-  --accent: oklch(0.488 0.217 264);
+  --accent: oklch(0.52 0.1 52);
 }
 
 .dark {
@@ -19,7 +19,7 @@
   --muted-foreground: oklch(0.64 0 0);
   --faint-foreground: oklch(0.5 0 0);
   --border: oklch(1 0 0 / 12%);
-  --accent: oklch(0.707 0.143 254);
+  --accent: oklch(0.74 0.085 65);
 }
 
 @theme inline {
@@ -53,7 +53,8 @@
   }
 
   ::selection {
-    background-color: var(--muted);
+    background-color: var(--foreground);
+    color: var(--background);
   }
 
   a:focus-visible,
@@ -61,5 +62,114 @@
     outline: 2px solid var(--accent);
     outline-offset: 2px;
     border-radius: 2px;
+  }
+}
+
+/* Theme toggle: circular reveal driven from Header.astro */
+.theme-transition::view-transition-old(root),
+.theme-transition::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+}
+
+/* Page transitions between pages of the site (titles paired in Layout.astro) */
+@view-transition {
+  navigation: auto;
+}
+
+/* The page itself swaps at once (a cross-fade reads as a flash); only the
+   title moves */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* The title keeps its real size and scales from its top-left corner, so it
+   grows evenly instead of stretching to the other box. Ratio is list text
+   (text-sm) over heading (text-2xl). */
+:root {
+  --title-ratio: 0.583;
+}
+
+::view-transition-group(page-title) {
+  animation-duration: 450ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(page-title),
+::view-transition-new(page-title) {
+  width: auto;
+  height: auto;
+  transform-origin: 0 0;
+  animation-duration: 450ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+[data-move='grow']::view-transition-old(page-title) {
+  animation-name: title-out-grow;
+}
+
+[data-move='grow']::view-transition-new(page-title) {
+  animation-name: title-in-grow;
+}
+
+[data-move='shrink']::view-transition-old(page-title) {
+  animation-name: title-out-shrink;
+}
+
+[data-move='shrink']::view-transition-new(page-title) {
+  animation-name: title-in-shrink;
+}
+
+@keyframes title-out-grow {
+  40% {
+    opacity: 0;
+  }
+  to {
+    transform: scale(calc(1 / var(--title-ratio)));
+    opacity: 0;
+  }
+}
+
+@keyframes title-in-grow {
+  from {
+    transform: scale(var(--title-ratio));
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+@keyframes title-out-shrink {
+  40% {
+    opacity: 0;
+  }
+  to {
+    transform: scale(var(--title-ratio));
+    opacity: 0;
+  }
+}
+
+@keyframes title-in-shrink {
+  from {
+    transform: scale(calc(1 / var(--title-ratio)));
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
   }
 }

@@ -111,6 +111,7 @@ const postDate = (date: Date) =>
             <div class="flex items-baseline gap-2.5">
               <a
                 href={`/projects/${project.id}`}
+                data-vt={`/projects/${project.id}`}
                 class="text-sm font-medium text-accent hover:underline underline-offset-4"
               >
                 {project.data.title}
@@ -140,6 +141,7 @@ const postDate = (date: Date) =>
           <div class="flex items-baseline justify-between gap-4">
             <a
               href={`/blog/${post.id}`}
+              data-vt={`/blog/${post.id}`}
               class="text-sm hover:text-accent transition-colors"
             >
               {post.data.title}
