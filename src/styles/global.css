@@ -9,7 +9,7 @@
   --muted-foreground: oklch(0.51 0.012 95);
   --faint-foreground: oklch(0.66 0.012 95);
   --border: oklch(0.903 0.012 95);
-  --accent: oklch(0.488 0.217 264);
+  --accent: oklch(0.52 0.1 52);
 }
 
 .dark {
@@ -19,7 +19,7 @@
   --muted-foreground: oklch(0.64 0 0);
   --faint-foreground: oklch(0.5 0 0);
   --border: oklch(1 0 0 / 12%);
-  --accent: oklch(0.707 0.143 254);
+  --accent: oklch(0.74 0.085 65);
 }
 
 @theme inline {
