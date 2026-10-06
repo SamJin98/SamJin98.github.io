@@ -58,12 +58,29 @@ const {
           el = find(path(from))
           if (el) return name(el), 'shrink'
         }
+        // Where the swap goes is handed to the next page through
+        // sessionStorage: on a back/forward restored from the page cache,
+        // navigation.activation can still describe an older visit.
+        let lastClicked = null
+        addEventListener('click', e => {
+          const a = e.target.closest?.('a[href]')
+          if (a) lastClicked = a.href
+        })
         addEventListener('pageswap', e => {
-          if (e.viewTransition && e.activation) pair(location.href, e.activation.entry.url)
+          sessionStorage.removeItem('vt')
+          clear()
+          const to = e.activation?.entry?.url ?? lastClicked
+          if (!e.viewTransition || !to) return
+          pair(location.href, to)
+          sessionStorage.setItem('vt', JSON.stringify([location.href, to]))
         })
         addEventListener('pagereveal', e => {
-          const from = window.navigation?.activation?.from?.url
-          if (!e.viewTransition || !from) return
+          clear()
+          const saved = sessionStorage.getItem('vt')
+          sessionStorage.removeItem('vt')
+          if (!e.viewTransition || !saved) return
+          const [from, to] = JSON.parse(saved)
+          if (path(to) !== path(location.href)) return
           const root = document.documentElement
           const move = pair(from, location.href)
           if (move) root.dataset.move = move
