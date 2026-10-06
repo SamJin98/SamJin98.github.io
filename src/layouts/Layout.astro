@@ -33,6 +33,47 @@ const {
           : 'light')
       document.documentElement.classList.toggle('dark', theme === 'dark')
     </script>
+    <script is:inline>
+      // Page transitions: the title you click grows into the page heading
+      // (and shrinks back). Only that pair is named, and only for the swap,
+      // so the theme toggle's transition is left alone.
+      ;(() => {
+        if (!('onpagereveal' in window)) return
+        const path = url => new URL(url).pathname.replace(/(.)\/$/, '$1')
+        let named = null
+        const clear = () => {
+          if (named) named.style.viewTransitionName = ''
+          named = null
+        }
+        // Same pick on both pages: the page being opened, else the one being left
+        const find = p => document.querySelector(`[data-vt="${CSS.escape(p)}"]`)
+        const name = el => {
+          el.style.viewTransitionName = 'page-title'
+          named = el
+        }
+        const pair = (from, to) => {
+          clear()
+          let el = find(path(to))
+          if (el) return name(el), 'grow'
+          el = find(path(from))
+          if (el) return name(el), 'shrink'
+        }
+        addEventListener('pageswap', e => {
+          if (e.viewTransition && e.activation) pair(location.href, e.activation.entry.url)
+        })
+        addEventListener('pagereveal', e => {
+          const from = window.navigation?.activation?.from?.url
+          if (!e.viewTransition || !from) return
+          const root = document.documentElement
+          const move = pair(from, location.href)
+          if (move) root.dataset.move = move
+          e.viewTransition.finished.finally(() => {
+            clear()
+            delete root.dataset.move
+          })
+        })
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

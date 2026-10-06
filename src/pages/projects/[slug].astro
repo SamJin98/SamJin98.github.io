@@ -39,7 +39,10 @@ const imagePath = `/src/content/projects/resources/${project.data.image}`
 
   <article class="mt-8">
     <header>
-      <h1 class="text-2xl font-semibold leading-snug">{project.data.title}</h1>
+      <h1
+        class="w-fit text-2xl font-semibold leading-snug"
+        data-vt={`/projects/${project.id}`}
+      >{project.data.title}</h1>
       <p class="mt-3 text-sm font-mono text-faint">
         {project.data.date.getFullYear()}
         {
