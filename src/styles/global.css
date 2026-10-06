@@ -63,3 +63,16 @@
     border-radius: 2px;
   }
 }
+
+/* Theme toggle: circular reveal driven from Header.astro */
+.theme-transition::view-transition-old(root),
+.theme-transition::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+}
