@@ -5,6 +5,8 @@ excerpt: 'A new grad wrote that they can no longer tell good code from bad, beca
 tags: ['Career']
 ---
 
+import HandwrittenChart from '../../components/HandwrittenChart.astro'
+
 A few weeks ago someone posted on an internal forum at work asking for advice. They were a new grad, a few months into the job, and the post was more honest than most things people write at work.
 
 The gist: they felt their judgment had been taken over by the tools. They could no longer say what good code or a good design looked like. Whatever the agent proposed is what got built. The most they did was spin up a few sub-agents to review each other and then ask the main one to explain why it had written things that way. They pointed out, correctly, that the order was inverted. They were supposed to decide what to build and have the tool do it. Instead the tool decided, and afterward it told them why. Diffs came back thousands of lines long, they lost patience halfway through reading them, and they started asking the agent to add comments so they could read the comments instead. They also said they felt restless all the time, and that they had stopped putting in the slow work on fundamentals.
@@ -41,38 +43,7 @@ The sub-agent review loop has the same problem one level up. Several instances o
 
 So the question I keep coming back to is how much of the code you shipped early in your career you actually wrote yourself. I don't have measured data on this, so the chart below is a sketch of my own impression, drawn from my experience and from talking to people who started at different times. Please read it as an illustration of the shape, not as numbers.
 
-<figure class="chart">
-  <svg viewBox="0 0 640 330" role="img" aria-labelledby="ratio-title ratio-desc">
-    <title id="ratio-title">Share of shipped code written by hand, by new grad cohort (illustrative)</title>
-    <desc id="ratio-desc">Four illustrative curves over the first 24 months of a new grad's career. The 2018 cohort stays near 95 percent hand-written. The 2022 cohort starts near 90 percent and falls to about half. The 2024 cohort starts near 60 percent and falls to about 15. The 2026 cohort starts around 15 percent and is projected to fall below 5.</desc>
-    <line class="grid" x1="56" y1="24" x2="520" y2="24" />
-    <line class="grid" x1="56" y1="89" x2="520" y2="89" />
-    <line class="grid" x1="56" y1="154" x2="520" y2="154" />
-    <line class="grid" x1="56" y1="219" x2="520" y2="219" />
-    <line class="grid" x1="56" y1="284" x2="520" y2="284" />
-    <text class="tick" x="46" y="28" text-anchor="end">100%</text>
-    <text class="tick" x="46" y="93" text-anchor="end">75%</text>
-    <text class="tick" x="46" y="158" text-anchor="end">50%</text>
-    <text class="tick" x="46" y="223" text-anchor="end">25%</text>
-    <text class="tick" x="46" y="288" text-anchor="end">0%</text>
-    <text class="tick" x="56" y="304" text-anchor="middle">0</text>
-    <text class="tick" x="172" y="304" text-anchor="middle">6</text>
-    <text class="tick" x="288" y="304" text-anchor="middle">12</text>
-    <text class="tick" x="404" y="304" text-anchor="middle">18</text>
-    <text class="tick" x="520" y="304" text-anchor="middle">24</text>
-    <text class="tick" x="288" y="324" text-anchor="middle">months since starting the first job</text>
-    <polyline class="line c1" points="56,31.8 172,34.4 288,37 404,39.6 520,42.2" />
-    <polyline class="line c2" points="56,50 172,65.6 288,91.6 404,128 520,159.2" />
-    <polyline class="line c3" points="56,122.8 172,164.4 288,206 404,232 520,247.6" />
-    <polyline class="line c4" points="56,245 114,255.4" />
-    <polyline class="line c4 projected" points="114,255.4 172,263.2 288,271 404,273.6 520,276.2" />
-    <text class="label c1" x="528" y="46">2018 grad</text>
-    <text class="label c2" x="528" y="163">2022 grad</text>
-    <text class="label c3" x="528" y="246">2024 grad</text>
-    <text class="label c4" x="528" y="280">2026 grad</text>
-  </svg>
-  <figcaption>Illustrative, not measured. Share of the code a new grad ships that they wrote by hand, over their first two years, by the year they started. The dashed part of the 2026 line is a guess about where it is heading.</figcaption>
-</figure>
+<HandwrittenChart />
 
 What matters to me is less the level of each curve than where it starts. Someone who graduated in 2018 did their first two years at close to full manual. By the time they handed most of the typing to an agent, they had years of prediction error behind them, and the delegation landed on top of a trained model. Someone starting this year begins at the bottom of the chart. They are asked to supervise output from day one, with a model that has had almost no training data.
 
