@@ -1,0 +1,107 @@
+---
+title: 'The Skipped Apprenticeship'
+date: '2026-10-08'
+excerpt: 'A new grad wrote that they can no longer tell good code from bad, because the model decides and then explains. Some thoughts on where engineering judgment comes from, and what happens when the tools improve faster than one apprenticeship takes.'
+tags: ['Career']
+---
+
+A few weeks ago someone posted on an internal forum at work asking for advice. They were a new grad, a few months into the job, and the post was more honest than most things people write at work.
+
+The gist: they felt their judgment had been taken over by the tools. They could no longer say what good code or a good design looked like. Whatever the agent proposed is what got built. The most they did was spin up a few sub-agents to review each other and then ask the main one to explain why it had written things that way. They pointed out, correctly, that the order was inverted. They were supposed to decide what to build and have the tool do it. Instead the tool decided, and afterward it told them why. Diffs came back thousands of lines long, they lost patience halfway through reading them, and they started asking the agent to add comments so they could read the comments instead. They also said they felt restless all the time, and that they had stopped putting in the slow work on fundamentals.
+
+I've been thinking about that post since, mostly because I recognize part of it in myself.
+
+---
+
+### My version of it
+
+I wrote a lot of code by hand before any of this existed. Not especially good code, but enough of it that I built up opinions. I know roughly what a service looks like when its boundaries are in the wrong place, because I've drawn them in the wrong place and then lived inside the consequences for a year. I care about system design partly because I've paid for not caring.
+
+Over the past year the speed at which an agent can produce code has gone up a lot, and my ability to vouch for that code has not kept pace. I can still tell when something is off, most of the time. But "most of the time" is carrying a lot of weight in that sentence, and I've noticed that the fraction of a diff I actually read has dropped. I review summaries. I check that tests exist. I wrote a [whole post](/blog/2026-03-18_the-agent-grades-its-own-homework) about how little a green checkmark proves, and I still catch myself trusting one.
+
+What separates me from the person who wrote that post is mostly timing. I got to build the judgment before the tools showed up, and they didn't.
+
+---
+
+### Judgment is a model you train
+
+Here is the frame I find most useful. Engineering judgment is a predictive model in your head. Given some code, it predicts things: this will be hard to test, this lock will contend, this abstraction will leak the first time someone adds a second backend. It is trained the way most models are, on prediction error. You expect something, reality disagrees, and the gap updates you.
+
+Writing code by hand is an unreasonably good source of that signal. Every time you run it, you made a prediction about what would happen, and you find out immediately whether you were right. A day of writing and debugging produces hundreds of small labeled examples, and because you produced the code, you know exactly which decision each label belongs to. Credit assignment is easy. When a design falls over six months later, you remember making it.
+
+Reviewing someone else's code produces far less signal per hour. You did not make the decisions, so you did not make the predictions, so there is nothing for reality to disagree with. You can still learn from review, and senior engineers learn a lot from it, but they come to a diff with a trained model already, and review is where they apply and refine it. Psychologists have a name for the asymmetry: the [generation effect](https://en.wikipedia.org/wiki/Generation_effect). People remember material they produced themselves much better than material they read.
+
+Reviewing an agent's code is worse still, for two reasons. The output almost always looks plausible, so most diffs carry no visible error to learn from; the bugs that matter are the ones that only show up later, after attribution has gone fuzzy. And the explanation that follows is not a record of how the code was produced. When you ask the model why it wrote something, you get a rationalization generated after the fact, fluent and confident regardless of whether the original choice was good. Reading it feels like learning. It mostly trains you to find explanations convincing.
+
+The sub-agent review loop has the same problem one level up. Several instances of a similar model, reading the same context, tend to share blind spots. Agreement between them is weaker evidence than it looks, for the same reason self-written tests are: two checks with correlated failure modes are close to one check.
+
+---
+
+### The ratio
+
+So the question I keep coming back to is how much of the code you shipped early in your career you actually wrote yourself. I don't have measured data on this, so the chart below is a sketch of my own impression, drawn from my experience and from talking to people who started at different times. Please read it as an illustration of the shape, not as numbers.
+
+<figure class="chart">
+  <svg viewBox="0 0 640 330" role="img" aria-labelledby="ratio-title ratio-desc">
+    <title id="ratio-title">Share of shipped code written by hand, by new grad cohort (illustrative)</title>
+    <desc id="ratio-desc">Four illustrative curves over the first 24 months of a new grad's career. The 2018 cohort stays near 95 percent hand-written. The 2022 cohort starts near 90 percent and falls to about half. The 2024 cohort starts near 60 percent and falls to about 15. The 2026 cohort starts around 15 percent and is projected to fall below 5.</desc>
+    <line class="grid" x1="56" y1="24" x2="520" y2="24" />
+    <line class="grid" x1="56" y1="89" x2="520" y2="89" />
+    <line class="grid" x1="56" y1="154" x2="520" y2="154" />
+    <line class="grid" x1="56" y1="219" x2="520" y2="219" />
+    <line class="grid" x1="56" y1="284" x2="520" y2="284" />
+    <text class="tick" x="46" y="28" text-anchor="end">100%</text>
+    <text class="tick" x="46" y="93" text-anchor="end">75%</text>
+    <text class="tick" x="46" y="158" text-anchor="end">50%</text>
+    <text class="tick" x="46" y="223" text-anchor="end">25%</text>
+    <text class="tick" x="46" y="288" text-anchor="end">0%</text>
+    <text class="tick" x="56" y="304" text-anchor="middle">0</text>
+    <text class="tick" x="172" y="304" text-anchor="middle">6</text>
+    <text class="tick" x="288" y="304" text-anchor="middle">12</text>
+    <text class="tick" x="404" y="304" text-anchor="middle">18</text>
+    <text class="tick" x="520" y="304" text-anchor="middle">24</text>
+    <text class="tick" x="288" y="324" text-anchor="middle">months since starting the first job</text>
+    <polyline class="line c1" points="56,31.8 172,34.4 288,37 404,39.6 520,42.2" />
+    <polyline class="line c2" points="56,50 172,65.6 288,91.6 404,128 520,159.2" />
+    <polyline class="line c3" points="56,122.8 172,164.4 288,206 404,232 520,247.6" />
+    <polyline class="line c4" points="56,245 114,255.4" />
+    <polyline class="line c4 projected" points="114,255.4 172,263.2 288,271 404,273.6 520,276.2" />
+    <text class="label c1" x="528" y="46">2018 grad</text>
+    <text class="label c2" x="528" y="163">2022 grad</text>
+    <text class="label c3" x="528" y="246">2024 grad</text>
+    <text class="label c4" x="528" y="280">2026 grad</text>
+  </svg>
+  <figcaption>Illustrative, not measured. Share of the code a new grad ships that they wrote by hand, over their first two years, by the year they started. The dashed part of the 2026 line is a guess about where it is heading.</figcaption>
+</figure>
+
+What matters to me is less the level of each curve than where it starts. Someone who graduated in 2018 did their first two years at close to full manual. By the time they handed most of the typing to an agent, they had years of prediction error behind them, and the delegation landed on top of a trained model. Someone starting this year begins at the bottom of the chart. They are asked to supervise output from day one, with a model that has had almost no training data.
+
+The other thing the chart shows is how quickly the starting point moved. An apprenticeship, the period where you go from "can make things work" to "can tell which way of making it work is right", takes something like two or three years. The tools have changed meaningfully every six months or so. Each cohort walked into a different job from the one before it, and none of them got to finish an apprenticeship under the conditions it started in. Nobody designed this; the tools improved faster than the training pipeline for the people using them could adapt.
+
+---
+
+### The compiler objection
+
+The obvious response is that we have been here before. People stopped writing assembly, and nobody thinks a modern engineer lacks judgment because they never hand-allocated registers. Maybe code is just the new assembly, and judgment moves up a level.
+
+I think this is right about the destination and wrong about the timing. A compiler is deterministic and extremely well tested, and its abstraction rarely leaks in ways an application engineer has to care about. That is what made it safe to stop understanding the layer below. Agent output is none of those things today. It is stochastic, it is confidently wrong in ways that look identical to being right, and the leaks show up in production. As long as the layer leaks, someone has to understand what is underneath it, and the person reviewing the diff is the only candidate in the room.
+
+It is possible that in a few years the verification story gets good enough that this stops mattering. I would not bet a career on it, and the new grads in particular are being asked to make that bet without anyone telling them it is one.
+
+---
+
+### What I would actually do
+
+I don't think the answer is to stop using the tools. That would be both impractical and a bit performative. The goal is to get prediction error back into the loop, on purpose, since the default workflow no longer supplies it. Some things I've started doing, or would tell a new grad to try:
+
+**Predict before you read.** Before opening the agent's diff, write down in a sentence or two what you expect it to look like: which files, what shape, where the tricky part is. Then compare. This turns passive review back into a prediction task, and the mismatches are exactly where you learn something.
+
+**Write the core by hand.** Not everything. Pick the part of the system that everything else depends on, the data model or the concurrency story or the main state machine, and write that yourself, slowly, even if the agent could do it in a minute. Let the agent do the glue around it.
+
+**Ask for diffs you can read.** A three-thousand-line change is unreviewable by anyone, human or not. Asking the agent to work in small steps that each make sense on their own is the single biggest improvement to my own review quality. If you find yourself reading comments instead of code, the diff is too big.
+
+**Debug without help sometimes.** Debugging is where the model in your head gets its sharpest updates, because you are forced to form hypotheses and have them refuted. When something breaks, spend some fixed amount of time on it alone before handing it over.
+
+**Own something long enough to regret it.** The slowest and most valuable signal is the one that arrives months later, when a decision you made turns out to be wrong. You only get it if you stay with a system long enough. That is harder to arrange than the others, but it is where most of my own judgment came from.
+
+None of this is new advice. It is roughly what a good mentor would have said ten years ago. The difference is that the work used to supply this practice by default, and now it has to be scheduled. The person who wrote that post had already noticed the inversion on their own, which is more than I expected. The open question is whether the rest of us, the people who did get the apprenticeship, will notice that the next cohort didn't, and make some room for them to get it.

@@ -151,3 +151,58 @@
   font-weight: var(--shiki-dark-font-weight) !important;
   text-decoration: var(--shiki-dark-text-decoration) !important;
 }
+
+/* Inline SVG charts in posts; colors follow the theme tokens */
+.prose figure.chart {
+  margin: 2em 0;
+}
+
+.prose figure.chart svg {
+  display: block;
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+}
+
+.prose figure.chart figcaption {
+  margin-top: 0.75em;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.chart .grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.chart .tick {
+  fill: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+
+.chart .line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart .projected {
+  stroke-dasharray: 4 5;
+}
+
+.chart .label {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+}
+
+.chart .c1 { stroke: var(--faint-foreground); fill: var(--faint-foreground); }
+.chart .c2 { stroke: var(--muted-foreground); fill: var(--muted-foreground); }
+.chart .c3 { stroke: var(--foreground); fill: var(--foreground); }
+.chart .c4 { stroke: var(--accent); fill: var(--accent); }
+.chart .line.c1,
+.chart .line.c2,
+.chart .line.c3,
+.chart .line.c4 { fill: none; }
+.chart .label { stroke: none; }
