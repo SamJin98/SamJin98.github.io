@@ -1,4 +1,4 @@
-# samjin98.github.io
+# samjin98.dev
 
 Personal site and blog, built with [Astro](https://astro.build/) and [Tailwind CSS](https://tailwindcss.com/).
 

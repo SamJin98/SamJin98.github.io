@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy redirects to GitHub Pages
 
 on:
   # Trigger the workflow every time you push to the `main` branch
@@ -20,10 +20,18 @@ jobs:
     steps:
       - name: Checkout your repository using git
         uses: actions/checkout@v4
-      - name: Install, build, and upload your site
-        uses: withastro/action@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # The site lives on samjin98.dev now. GitHub Pages only serves
+      # redirects so old samjin98.github.io links keep working.
+      - run: node scripts/pages-redirect.mjs dist
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
 
   deploy:
     needs: build
@@ -32,6 +40,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy redirects to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

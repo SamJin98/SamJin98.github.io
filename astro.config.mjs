@@ -7,7 +7,7 @@ import { satteri } from '@astrojs/markdown-satteri'
 import temmlMath from './src/lib/temml-math.js'
 
 export default defineConfig({
-  site: 'https://samjin98.github.io/',
+  site: 'https://samjin98.dev/',
   vite: {
     plugins: [tailwindcss()]
   },
