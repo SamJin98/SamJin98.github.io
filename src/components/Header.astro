@@ -6,12 +6,15 @@ interface Props {
 const { pathname } = Astro.props
 
 const links = [
-  { label: 'Writing', href: '/blog' },
-  { label: 'Projects', href: '/projects' }
+  { label: 'Home', href: '/' },
+  { label: 'Projects', href: '/projects' },
+  { label: 'Writing', href: '/blog' }
 ]
 
 const isActive = (href: string) =>
-  pathname === href || pathname.startsWith(href + '/')
+  href === '/'
+    ? pathname === '/'
+    : pathname === href || pathname.startsWith(href + '/')
 ---
 
 <header class="flex items-center justify-between py-10">
@@ -23,6 +26,7 @@ const isActive = (href: string) =>
       links.map(link => (
         <a
           href={link.href}
+          aria-current={isActive(link.href) ? 'page' : undefined}
           class:list={[
             'transition-colors hover:text-foreground',
             isActive(link.href)

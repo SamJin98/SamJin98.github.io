@@ -98,4 +98,148 @@ export const education = [
   }
 ]
 
-// Project pages are driven by the content collection in src/content/projects/.
+// The home page's experience list and the checkpoints on its training curve.
+// `at` is where the checkpoint sits on the curve's time axis.
+export const timeline = [
+  {
+    key: 'bytedance',
+    label: 'ByteDance',
+    at: 2025.45,
+    years: '2025 – now',
+    title: 'AI Software Engineer',
+    place: 'ByteDance',
+    line: 'Knowledge base, coding agent, code-generation benchmark, and RL training for Lynx.'
+  },
+  {
+    key: 'cwru',
+    label: 'Case Western',
+    at: 2023.7,
+    years: '2023 – 25',
+    title: 'MS CS, Research Assistant',
+    place: 'Case Western Reserve',
+    line: 'LLM inference research: KV-cache pooling and attention selection, about 30% faster generation.'
+  },
+  {
+    key: 'crec',
+    label: 'CREC',
+    at: 2021.5,
+    years: '2021 – 23',
+    title: 'Software Engineer',
+    place: 'CREC Cloud Net',
+    line: 'BERT document matching (3 hours to 2 minutes), LoRA fine-tuning, led a team of 11.'
+  },
+  {
+    key: 'ibm',
+    label: 'IBM',
+    at: 2019.8,
+    years: '2019',
+    title: 'Software Engineer Intern',
+    place: 'IBM',
+    line: 'Digital twin prototype for Watson in React and Go.'
+  },
+  {
+    key: 'ucas',
+    label: 'UCAS',
+    at: 2018.2,
+    years: '2018 – 20',
+    title: 'Research Assistant',
+    place: 'Chinese Academy of Sciences',
+    line: 'Software security: fuzzing and symbolic execution.'
+  }
+]
+
+// Current work at ByteDance, drawn on the projects page as four steps that
+// feed each other.
+export const pipeline = [
+  {
+    title: 'Knowledge base',
+    line: 'The docs and code examples that the tools retrieve from.'
+  },
+  {
+    title: 'Coding agent',
+    line: 'Answers questions and writes Lynx code, using the knowledge base.'
+  },
+  {
+    title: 'Benchmark',
+    line: 'Checks whether the generated app actually builds, runs, and behaves.'
+  },
+  {
+    title: 'RL training',
+    line: "Uses the benchmark's score to train a model that writes better code."
+  }
+]
+
+// Lists on the projects page. `href` starting with `/` is a page on this
+// site; anything else opens in a new tab. No `href` means no public write-up.
+export interface ProjectItem {
+  title: string
+  meta: string
+  line: string
+  href?: string
+}
+
+export const sideProjects: ProjectItem[] = [
+  {
+    title: 'e2e on Lynx',
+    meta: '2026 · GitHub',
+    line: 'A ReactLynx shop page tested by LLM agents. The same drag-and-checkout flow, run with two different models and compared.',
+    href: 'https://github.com/SamJin98/lynx-e2e-demo'
+  },
+  {
+    title: 'Second Look',
+    meta: '2026 · live demo',
+    line: 'A second opinion on your photos. Suggests color fixes and crops from fixed rules, entirely in the browser, with no model.',
+    href: 'https://second-look-blue-beta.vercel.app'
+  },
+  {
+    title: 'AI4EDU study assistant',
+    meta: '2025',
+    line: 'Turns lecture notes and class materials into personalized study tools. Used across courses.',
+    href: '/projects/2025-03-10_ai4edu'
+  },
+  {
+    title: 'Hello Algo',
+    meta: 'open source',
+    line: 'Contributor to an open-source data structures and algorithms course.',
+    href: '/projects/2024-01-15_hello-algo'
+  }
+]
+
+export const research: ProjectItem[] = [
+  {
+    title: 'KV-cache pooling and attention selection',
+    meta: 'Case Western · 2024',
+    line: 'Reusing KV cache across requests for about 30% faster generation.',
+    href: '/blog/2024-10-11_optimizing-kv-cache-llm-inference'
+  },
+  {
+    title: 'Distributed GPT-2 training with FSDP',
+    meta: '2023',
+    line: 'A custom MPI-based FSDP framework for scalable training of GPT-2 and BERT.',
+    href: '/projects/2023-12-25_fsdp'
+  },
+  {
+    title: 'CausalVAE for image inpainting',
+    meta: '2023',
+    line: 'Causal reasoning inside a VAE, for more coherent reconstructions.',
+    href: '/projects/2023-12-15_causal-vae'
+  }
+]
+
+export const earlierWork: ProjectItem[] = [
+  {
+    title: 'BERT document matching',
+    meta: 'CREC · 2021 – 23',
+    line: 'Text similarity that cut a 3 hour matching job to 2 minutes.'
+  },
+  {
+    title: 'LoRA fine-tuning of ChatGLM-6B',
+    meta: 'CREC · 2022 – 23',
+    line: 'Domain question answering, about 35% more accurate after fine-tuning.'
+  },
+  {
+    title: 'Fuzzing strategy improvements for AFL',
+    meta: 'UCAS · 2018 – 20',
+    line: 'Vulnerability discovery with fuzzing and symbolic execution.'
+  }
+]

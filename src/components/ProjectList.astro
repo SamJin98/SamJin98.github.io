@@ -1,0 +1,46 @@
+---
+import type { ProjectItem } from '@/lib/data'
+
+interface Props {
+  items: ProjectItem[]
+}
+
+const { items } = Astro.props
+const internal = (href: string) => href.startsWith('/')
+---
+
+<ul class="mt-2 grid gap-x-11 sm:grid-cols-2">
+  {
+    items.map(item => (
+      <li class="border-b py-3.5">
+        <div class="flex flex-wrap items-baseline gap-x-2.5">
+        {item.href ? (
+          <a
+            href={item.href}
+            data-vt={internal(item.href) ? item.href : undefined}
+            target={internal(item.href) ? undefined : '_blank'}
+            rel={internal(item.href) ? undefined : 'noopener noreferrer'}
+            class="font-semibold text-[0.9375rem] hover:text-accent transition-colors"
+          >
+            {item.title}
+            {!internal(item.href) && (
+              <span class="font-normal text-faint" aria-hidden="true">
+                {' '}
+                ↗
+              </span>
+            )}
+          </a>
+        ) : (
+          <span class="font-semibold text-[0.9375rem]">{item.title}</span>
+        )}
+        <span class="font-mono text-xs text-faint whitespace-nowrap">
+          {item.meta}
+        </span>
+        </div>
+        <p class="mt-1 text-sm leading-relaxed text-muted-foreground">
+          {item.line}
+        </p>
+      </li>
+    ))
+  }
+</ul>

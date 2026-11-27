@@ -19,37 +19,144 @@ const postsByYear = posts.reduce(
 
 const years = Object.keys(postsByYear).sort((a, b) => parseInt(b) - parseInt(a))
 
-const postDate = (date: Date) =>
-  date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+const tagOrder = ['AI', 'Career', 'Reflection', 'Culture']
+const counts = new Map<string, number>()
+for (const post of posts)
+  for (const tag of post.data.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1)
+const tags = [...counts.keys()].sort(
+  (a, b) =>
+    (tagOrder.indexOf(a) + 1 || 99) - (tagOrder.indexOf(b) + 1 || 99) ||
+    a.localeCompare(b)
+)
+const chips = [
+  { tag: '', label: 'All', count: posts.length },
+  ...tags.map(tag => ({ tag, label: tag, count: counts.get(tag)! }))
+]
+
+const month = (date: Date) =>
+  date.toLocaleDateString('en-US', { month: 'short' })
 ---
 
-<Layout title="Writing · Sam Jin">
-  <h1 class="text-2xl font-semibold mb-10">Writing</h1>
-  <div class="space-y-10">
+<Layout
+  title="Writing · Sam Jin"
+  description="Technical posts on evaluation, agents, and inference, and essays on work and culture."
+  wide
+>
+  <h1 class="font-serif font-medium text-4xl leading-[1.1] tracking-tight">
+    Writing
+  </h1>
+  <p class="mt-2.5 max-w-[38em] text-muted-foreground">
+    Technical posts on evaluation, agents, and inference, and essays on work
+    and culture.
+  </p>
+
+  <div id="chips" class="mt-7 flex flex-wrap gap-1.5" role="group" aria-label="Filter by tag">
+    {
+      chips.map(chip => (
+        <button
+          type="button"
+          data-tag={chip.tag}
+          aria-pressed={chip.tag === '' ? 'true' : 'false'}
+          class="chip cursor-pointer rounded-full border px-3.5 py-1.5 text-[0.8125rem] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {chip.label}
+          <span class="ml-1 font-mono text-[0.6875rem] text-faint">
+            {chip.count}
+          </span>
+        </button>
+      ))
+    }
+  </div>
+
+  <div id="posts" class="mt-6">
     {
       years.map(year => (
-        <section>
-          <h2 class="text-xs font-mono font-medium uppercase tracking-widest text-faint mb-4">
+        <section class="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-3 border-t py-3.5 sm:grid-cols-[4.5rem_minmax(0,1fr)]">
+          <h2 class="font-mono text-[0.8125rem] leading-8 text-faint">
             {year}
           </h2>
-          <div class="space-y-2.5">
+          <ul>
             {postsByYear[year].map(post => (
-              <div class="flex items-baseline justify-between gap-4">
+              <li
+                data-tags={post.data.tags.join(',')}
+                class="flex items-baseline justify-between gap-4 py-1.5"
+              >
                 <a
                   href={`/blog/${post.id}`}
                   data-vt={`/blog/${post.id}`}
-                  class="text-sm hover:text-accent transition-colors"
+                  class="hover:text-accent transition-colors"
                 >
                   {post.data.title}
                 </a>
-                <span class="text-xs font-mono text-faint whitespace-nowrap">
-                  {postDate(post.data.date)}
+                <span class="font-mono text-xs text-faint whitespace-nowrap">
+                  <span class="tag">{post.data.tags.join(', ')} · </span>
+                  {month(post.data.date)}
                 </span>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       ))
     }
   </div>
 </Layout>
+
+<style>
+  .chip[aria-pressed='true'] {
+    background-color: var(--foreground);
+    border-color: var(--foreground);
+    color: var(--background);
+  }
+
+  .chip[aria-pressed='true'] span {
+    color: var(--background);
+    opacity: 0.7;
+  }
+
+  /* The tag is only worth showing while every tag is listed */
+  #posts[data-filtered] .tag {
+    display: none;
+  }
+</style>
+
+<script>
+  const chips = document.querySelectorAll<HTMLButtonElement>('#chips button')
+  const list = document.getElementById('posts')!
+  const known = new Set([...chips].map(chip => chip.dataset.tag))
+
+  const show = (tag: string) => {
+    chips.forEach(chip =>
+      chip.setAttribute('aria-pressed', String(chip.dataset.tag === tag))
+    )
+    list.toggleAttribute('data-filtered', tag !== '')
+    list.querySelectorAll('section').forEach(section => {
+      let any = false
+      section.querySelectorAll<HTMLElement>('li').forEach(item => {
+        const match = !tag || item.dataset.tags!.split(',').includes(tag)
+        item.hidden = !match
+        any ||= match
+      })
+      section.hidden = !any
+    })
+  }
+
+  // The chosen tag lives in the URL so a filtered list can be linked to and
+  // survives going back from a post
+  const fromUrl = () => {
+    const tag = new URLSearchParams(location.search).get('tag') ?? ''
+    show(known.has(tag) ? tag : '')
+  }
+
+  chips.forEach(chip =>
+    chip.addEventListener('click', () => {
+      const tag = chip.dataset.tag ?? ''
+      const url = new URL(location.href)
+      if (tag) url.searchParams.set('tag', tag)
+      else url.searchParams.delete('tag')
+      history.replaceState(null, '', url)
+      show(tag)
+    })
+  )
+  addEventListener('pageshow', fromUrl)
+  fromUrl()
+</script>

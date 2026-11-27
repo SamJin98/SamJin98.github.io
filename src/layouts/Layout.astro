@@ -8,11 +8,14 @@ import Footer from '@/components/Footer.astro'
 interface Props {
   title?: string
   description?: string
+  /** List pages use the full container; article pages stay at reading width */
+  wide?: boolean
 }
 
 const {
   title = 'Sam Jin',
-  description = 'Software engineer working on AI tooling, agents, and scalable backend systems.'
+  description = 'AI engineer at ByteDance working on LLM evaluation, coding agents, and RL training for code generation.',
+  wide = false
 } = Astro.props
 
 const canonical = new URL(Astro.url.pathname, Astro.site)
@@ -56,6 +59,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
           const r = el.getBoundingClientRect()
           return r.bottom > 0 && r.top < innerHeight
         }
+        const fontSize = el => parseFloat(getComputedStyle(el).fontSize)
         const name = el => {
           el.style.viewTransitionName = 'page-title'
           named = el
@@ -81,18 +85,30 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
           const to = e.activation?.entry?.url ?? lastClicked
           if (!e.viewTransition || !to) return
           if (pair(location.href, to))
-            sessionStorage.setItem('vt', JSON.stringify([location.href, to]))
+            sessionStorage.setItem(
+              'vt',
+              JSON.stringify([location.href, to, fontSize(named)])
+            )
         })
         addEventListener('pagereveal', e => {
           clear()
           const saved = sessionStorage.getItem('vt')
           sessionStorage.removeItem('vt')
           if (!e.viewTransition || !saved) return
-          const [from, to] = JSON.parse(saved)
+          const [from, to, size] = JSON.parse(saved)
           if (path(to) !== path(location.href)) return
           const root = document.documentElement
           const move = pair(from, location.href)
           if (move) root.dataset.move = move
+          // List titles differ in size from page to page, so the scale is
+          // measured from the two titles instead of fixed in CSS
+          if (move && size) {
+            const here = fontSize(named)
+            root.style.setProperty(
+              '--title-ratio',
+              String(Math.min(size, here) / Math.max(size, here))
+            )
+          }
           e.viewTransition.finished.finally(() => {
             clear()
             delete root.dataset.move
@@ -103,7 +119,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap"
       rel="stylesheet"
     />
     <script
@@ -119,9 +135,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
     </script>
   </head>
   <body class="min-h-screen flex flex-col">
-    <div class="mx-auto w-full max-w-2xl flex-1 flex flex-col px-6">
+    <div class="mx-auto w-full max-w-4xl flex-1 flex flex-col px-6">
       <Header pathname={Astro.url.pathname} />
-      <main class="flex-1 pb-16">
+      <main
+        class:list={['flex-1 pb-16', !wide && 'mx-auto w-full max-w-2xl']}
+      >
         <slot />
       </main>
       <Footer />

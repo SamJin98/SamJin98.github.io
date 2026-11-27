@@ -1,42 +1,142 @@
 ---
 import Layout from '@/layouts/Layout.astro'
-import { getCollection } from 'astro:content'
+import SectionHeading from '@/components/SectionHeading.astro'
+import ProjectList from '@/components/ProjectList.astro'
+import {
+  pipeline,
+  sideProjects,
+  research,
+  earlierWork,
+  type ProjectItem
+} from '@/lib/data'
 
-const projects = (await getCollection('projects')).sort(
-  (a, b) =>
-    Number(b.data.featured ?? false) - Number(a.data.featured ?? false) ||
-    b.data.date.getTime() - a.data.date.getTime()
-)
+// Star count for hello-algo, fetched at build time; fails silently
+let side: ProjectItem[] = sideProjects
+try {
+  const res = await fetch('https://api.github.com/repos/krahets/hello-algo')
+  if (res.ok) {
+    const repo = await res.json()
+    const stars = new Intl.NumberFormat('en', { notation: 'compact' }).format(
+      repo.stargazers_count
+    )
+    side = sideProjects.map(p =>
+      p.title === 'Hello Algo' ? { ...p, meta: `${p.meta} · ★ ${stars}` } : p
+    )
+  }
+} catch {
+  // offline builds render without the star count
+}
 ---
 
-<Layout title="Projects · Sam Jin">
-  <h1 class="text-2xl font-semibold mb-10">Projects</h1>
-  <div class="space-y-8">
-    {
-      projects.map(project => (
-        <div>
-          <div class="flex items-baseline justify-between gap-4">
-            <a
-              href={`/projects/${project.id}`}
-              data-vt={`/projects/${project.id}`}
-              class="text-sm font-medium text-accent hover:underline underline-offset-4"
-            >
-              {project.data.title}
-            </a>
-            <span class="text-xs font-mono text-faint whitespace-nowrap">
-              {project.data.date.getFullYear()}
-            </span>
-          </div>
-          <p class="mt-1.5 text-sm text-muted-foreground">
-            {project.data.excerpt}
-          </p>
-          {project.data.tags.length > 0 && (
-            <p class="mt-1.5 text-xs font-mono text-faint">
-              {project.data.tags.join(' · ')}
+<Layout
+  title="Projects · Sam Jin"
+  description="What Sam Jin is building now, plus side projects, research, and earlier work."
+  wide
+>
+  <h1 class="font-serif font-medium text-4xl leading-[1.1] tracking-tight">
+    Projects
+  </h1>
+  <p class="mt-2.5 max-w-[38em] text-muted-foreground">
+    What I am building now, then side projects, research, and earlier work.
+  </p>
+
+  <section class="mt-11">
+    <SectionHeading
+      title="Now: getting models to write Lynx code"
+      note="ByteDance, 2025 to now. Four pieces that feed each other."
+    />
+    <ol class="flow mt-6 grid gap-[30px] md:grid-cols-4">
+      {
+        pipeline.map((step, i) => (
+          <li class="step relative flex flex-col gap-1.5 rounded-lg border px-4 pt-4 pb-3.5">
+            <span class="font-mono text-xs text-accent">{i + 1}</span>
+            <span class="font-semibold">{step.title}</span>
+            <p class="text-sm leading-relaxed text-muted-foreground">
+              {step.line}
             </p>
-          )}
-        </div>
-      ))
-    }
-  </div>
+          </li>
+        ))
+      }
+    </ol>
+    <div class="loop" aria-hidden="true"></div>
+    <p class="loopcap text-[0.8125rem] text-muted-foreground">
+      The trained model goes back into the agent.
+    </p>
+  </section>
+
+  <section class="mt-16">
+    <SectionHeading
+      title="Side projects"
+      note="Small things I built to try an idea."
+    />
+    <ProjectList items={side} />
+  </section>
+
+  <section class="mt-16">
+    <SectionHeading title="Research" />
+    <ProjectList items={research} />
+  </section>
+
+  <section class="mt-16">
+    <SectionHeading title="Earlier work" note="Not public, so no write-ups." />
+    <ProjectList items={earlierWork} />
+  </section>
 </Layout>
+
+<style>
+  /* Arrows between the steps: down on a phone, to the right on a wide screen */
+  .step:not(:last-child)::after {
+    content: '↓';
+    position: absolute;
+    left: 50%;
+    bottom: -27px;
+    transform: translateX(-50%);
+    color: var(--accent);
+  }
+
+  .loop {
+    display: none;
+  }
+
+  .loopcap {
+    margin-top: 12px;
+  }
+
+  @media (min-width: 48rem) {
+    .step:not(:last-child)::after {
+      content: '→';
+      left: auto;
+      bottom: auto;
+      right: -23px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    /* A bracket under the row, from the middle of step 4 back up to step 2 */
+    .loop {
+      display: block;
+      position: relative;
+      margin: 10px 12.5% 0 37.5%;
+      height: 20px;
+      border: 1.5px solid var(--accent);
+      border-top: 0;
+      border-radius: 0 0 10px 10px;
+      opacity: 0.7;
+    }
+
+    .loop::before {
+      content: '';
+      position: absolute;
+      left: -5.5px;
+      top: -3px;
+      border: 5px solid transparent;
+      border-top: 0;
+      border-bottom-color: var(--accent);
+    }
+
+    .loopcap {
+      margin: 8px 12.5% 0 37.5%;
+      text-align: center;
+    }
+  }
+</style>
