@@ -24,11 +24,12 @@ const link = 'text-accent hover:underline underline-offset-4'
 ---
 
 <Layout wide>
-  <section>
+  <section class="relative">
+    <div class="landscape" aria-hidden="true"></div>
     <h1 class="font-serif font-medium text-4xl sm:text-[2.75rem] leading-[1.1] tracking-tight">
       {personalInfo.name}
     </h1>
-    <p class="mt-4 max-w-[34em] text-lg leading-relaxed">
+    <p class="mt-4 max-w-[34em] md:max-w-[27em] text-lg leading-relaxed">
       AI engineer at <b class="font-semibold">ByteDance</b>. I build the
       benchmark, the coding agent, and the RL training that help language
       models write code for{' '}<a
@@ -168,6 +169,34 @@ const link = 'text-accent hover:underline underline-offset-4'
 </Layout>
 
 <style>
+  /* A painted loss landscape beside the intro, with a descent path on it.
+     The image fades out on its top and left; the mask fades the bottom. */
+  .landscape {
+    display: none;
+    position: absolute;
+    z-index: -1;
+    top: -5.5rem;
+    right: -3rem;
+    width: 33rem;
+    aspect-ratio: 2 / 1;
+    background: url('/landscape-light.webp') center / cover no-repeat;
+    mask-image:
+      linear-gradient(to bottom, #000 55%, transparent 96%),
+      linear-gradient(to right, #000 82%, transparent 100%);
+    mask-composite: intersect;
+    pointer-events: none;
+  }
+
+  :global(.dark) .landscape {
+    background-image: url('/landscape-dark.webp');
+  }
+
+  @media (min-width: 48rem) {
+    .landscape {
+      display: block;
+    }
+  }
+
   .job.on {
     background-color: var(--muted);
   }

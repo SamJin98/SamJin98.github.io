@@ -1,6 +1,6 @@
 ---
-// The experience list drawn as a training curve: a noisy raw line, a smoothed
-// line on top, and one labelled checkpoint per job. Rendered at build time;
+// The experience list drawn as a training curve: one smooth line with a dot
+// per job. Only the highlighted job shows its name. Rendered at build time;
 // the script on the home page only links hover between the list and the dots.
 interface Checkpoint {
   key: string
@@ -49,25 +49,11 @@ const lossAt = (year: number) => {
   return control[control.length - 1][1]
 }
 
-// Seeded noise so every build draws the same line
-let seed = 11
-const random = () => {
-  seed = (seed + 0x6d2b79f5) | 0
-  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
-  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-  return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-}
-
-let raw = ''
 let smooth = ''
-const STEPS = 240
+const STEPS = 120
 for (let i = 0; i <= STEPS; i++) {
   const year = START + (i / STEPS) * 8.9
-  const loss = lossAt(year)
-  const noise = (random() - 0.5) * (0.04 + loss * 0.09)
-  raw += `${i ? 'L' : 'M'}${x(year).toFixed(1)} ${y(loss + noise).toFixed(1)}`
-  if (i % 3 === 0)
-    smooth += `${smooth ? 'L' : 'M'}${x(year).toFixed(1)} ${y(loss).toFixed(1)}`
+  smooth += `${i ? 'L' : 'M'}${x(year).toFixed(1)} ${y(lossAt(year)).toFixed(1)}`
 }
 
 const ticks = [2018, 2020, 2022, 2024, 2026]
@@ -88,8 +74,6 @@ const dots = checkpoints.map((c, i) => {
   aria-label="The experience list drawn as a line that falls from 2018 to 2026, with a bump in 2023"
 >
   <path class="axis" d="M34 18V252H504"></path>
-  <text class="small" x="502" y="26" text-anchor="end">top: unsure</text>
-  <text class="small" x="40" y="244">bottom: sure</text>
   {
     ticks.map(year => (
       <text
@@ -102,7 +86,6 @@ const dots = checkpoints.map((c, i) => {
       </text>
     ))
   }
-  <path class="raw" d={raw}></path>
   <path class="smooth" d={smooth} pathLength="1"></path>
   {
     dots.map(d => (
@@ -132,12 +115,6 @@ const dots = checkpoints.map((c, i) => {
       monospace;
     fill: var(--faint-foreground);
   }
-  .raw {
-    fill: none;
-    stroke: var(--faint-foreground);
-    stroke-width: 1;
-    opacity: 0.4;
-  }
   .smooth {
     fill: none;
     stroke: var(--accent);
@@ -160,6 +137,16 @@ const dots = checkpoints.map((c, i) => {
   }
   .stem {
     stroke: var(--border);
+  }
+  /* Only the highlighted job is named, so the line stays clean */
+  .ck text,
+  .stem {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .ck.on text,
+  .ck.on .stem {
+    opacity: 1;
   }
   .dot {
     fill: var(--background);
