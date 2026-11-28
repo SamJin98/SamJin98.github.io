@@ -69,11 +69,11 @@ const link = 'text-accent hover:underline underline-offset-4'
                 {job.years}
               </span>
               <div>
-                <p class="text-sm leading-[1.375rem]">
-                  <b class="font-semibold">{job.title}</b>
-                  <span class="text-muted-foreground"> · {job.place}</span>
+                <p class="text-sm leading-[1.375rem] font-semibold">{job.title}</p>
+                <p class="text-[0.8125rem] leading-snug text-muted-foreground">
+                  {job.place}
                 </p>
-                <p class="desc mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground">
+                <p class="desc mt-1 text-[0.8125rem] leading-snug text-muted-foreground">
                   {job.line}
                 </p>
               </div>
@@ -93,18 +93,19 @@ const link = 'text-accent hover:underline underline-offset-4'
         </figcaption>
       </figure>
       <h2 class="head mt-5">Education</h2>
-      <ul class="mt-2.5 space-y-1.5 text-[0.8125rem] leading-snug">
+      <ul class="mt-2 space-y-2 text-[0.8125rem] leading-snug">
         {
           education.map(school => (
             <li>
-              {school.degree}
-              <span class="text-muted-foreground">
-                {' · '}
+              <p class="text-sm leading-[1.375rem] font-semibold">
+                {school.degree}
+              </p>
+              <p class="text-muted-foreground">
                 {school.institution}
-              </span>
-              <span class="ml-1 whitespace-nowrap font-mono text-[0.6875rem] text-faint">
-                {school.period.replace(/ - \d\d/, ' – ')}
-              </span>
+                <span class="ml-1.5 whitespace-nowrap font-mono text-[0.6875rem] text-faint">
+                  {school.period.replace(/ - \d\d/, ' – ')}
+                </span>
+              </p>
             </li>
           ))
         }
@@ -182,7 +183,7 @@ const link = 'text-accent hover:underline underline-offset-4'
   }
 
   .cols {
-    margin-top: clamp(2.25rem, 6.5vh, 5rem);
+    margin-top: clamp(1.75rem, 4.5vh, 4rem);
   }
 
   @media (min-width: 64rem) and (max-height: 67.99rem) {
