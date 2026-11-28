@@ -1,6 +1,24 @@
 ---
 import Layout from '@/layouts/Layout.astro'
-import { personalInfo, timeline } from '@/lib/data'
+import TrainingCurve from '@/components/TrainingCurve.astro'
+import { getCollection } from 'astro:content'
+import { personalInfo, timeline, sideProjects } from '@/lib/data'
+
+const posts = (await getCollection('blog'))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 3)
+
+const postDate = (date: Date) =>
+  date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+
+const selected = [
+  { title: 'Lynx code-generation benchmark', href: '/projects', meta: 'now' },
+  ...sideProjects
+    .filter(p => ['e2e on Lynx', 'Second Look'].includes(p.title))
+    .map(p => ({ title: p.title, href: p.href!, meta: p.meta.slice(0, 4) }))
+]
+
+const external = (href: string) => !href.startsWith('/')
 
 // The descent path: where I studied and worked, oldest first, walking down
 // the right-hand hill of the painting into the valley. `x` is the position
@@ -22,7 +40,7 @@ const stops = [
   },
   ...[...timeline].reverse()
 ].map((stop, i, all) => {
-  const x = 0.86 - (i / (all.length - 1)) * 0.42
+  const x = 0.92 - (i / (all.length - 1)) * 0.44
   return {
     ...stop,
     left: `${(x * 100).toFixed(2)}%`,
@@ -37,9 +55,10 @@ const link = 'text-accent hover:underline underline-offset-4'
 ---
 
 <Layout scene>
-  <section class="pt-4 sm:pt-10">
+  <div class="top">
+  <section class="pt-4 lg:pt-2">
     <h1
-      class="font-serif font-medium text-5xl leading-[1.05] tracking-tight sm:text-7xl"
+      class="font-serif font-medium text-5xl leading-[1.05] tracking-tight sm:text-6xl"
     >
       {personalInfo.name}
     </h1>
@@ -68,6 +87,55 @@ const link = 'text-accent hover:underline underline-offset-4'
     </p>
   </section>
 
+  <figure class="fig">
+    <TrainingCurve checkpoints={timeline} />
+    <figcaption class="font-mono text-[0.6875rem]">
+      Fig. 1 · the path below as a training curve
+    </figcaption>
+  </figure>
+  </div>
+
+  <div class="lists">
+    <section>
+      <h2 class="strip head">Selected projects</h2>
+      <ul>
+        {
+          selected.map(item => (
+            <li class="strip">
+              <a
+                href={item.href}
+                class="hover:text-accent"
+                {...(external(item.href)
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
+              >
+                {item.title}
+              </a>
+              <span class="meta">{item.meta}</span>
+            </li>
+          ))
+        }
+        <li class="strip"><a href="/projects" class={link}>All projects</a></li>
+      </ul>
+    </section>
+    <section>
+      <h2 class="strip head">Recent writing</h2>
+      <ul>
+        {
+          posts.map(post => (
+            <li class="strip">
+              <a href={`/blog/${post.id}`} class="hover:text-accent">
+                {post.data.title}
+              </a>
+              <span class="meta">{postDate(post.data.date)}</span>
+            </li>
+          ))
+        }
+        <li class="strip"><a href="/blog" class={link}>All writing</a></li>
+      </ul>
+    </section>
+  </div>
+
   <ol class="path" aria-label="Where I studied and worked, oldest first">
     {
       stops.map(stop => (
@@ -75,6 +143,7 @@ const link = 'text-accent hover:underline underline-offset-4'
           class:list={['stop', stop.high && 'high', stop.now && 'now']}
           style={`left:${stop.left};top:${stop.top}`}
           tabindex="0"
+          data-job={stop.key}
         >
           <span class="dot" aria-hidden="true" />
           <div class="tag strip">
@@ -100,7 +169,104 @@ const link = 'text-accent hover:underline underline-offset-4'
   </ol>
 </Layout>
 
+<script>
+  // Hovering a stop on the hill or a point on the curve highlights both
+  const linked = document.querySelectorAll<HTMLElement>('[data-job]')
+  const show = (key: string) =>
+    linked.forEach(el => el.classList.toggle('on', el.dataset.job === key))
+  linked.forEach(el => {
+    const key = el.dataset.job!
+    el.addEventListener('pointerenter', () => show(key))
+    el.addEventListener('focusin', () => show(key))
+  })
+  show('bytedance')
+</script>
+
 <style>
+  /* The figure is drawn straight on the sky, so it borrows the ink colour */
+  .fig {
+    --curve-axis: color-mix(in oklab, var(--foreground) 55%, transparent);
+    --curve-text: color-mix(in oklab, var(--foreground) 80%, transparent);
+    --curve-raw: var(--foreground);
+    --curve-raw-opacity: 0.45;
+    position: relative;
+    max-width: 27rem;
+    margin-top: 1.5rem;
+  }
+
+  .fig figcaption {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: var(--curve-text);
+  }
+
+  .lists a {
+    display: inline-block;
+    max-width: 15rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+  }
+
+  .lists {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem 2.5rem;
+    margin-top: 1.75rem;
+    font-size: 0.875rem;
+    line-height: 1.35;
+  }
+
+  .lists ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+  }
+
+  .lists .strip {
+    padding: 0.2rem 0.55rem;
+  }
+
+  .lists .head {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .lists .meta {
+    margin-left: 0.5rem;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.6875rem;
+    color: var(--muted-foreground);
+  }
+
+  @media (min-width: 64rem) {
+    .top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 27rem;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    .fig {
+      margin-top: 0;
+    }
+
+    .lists {
+      position: relative;
+      z-index: 2;
+      flex-wrap: nowrap;
+      gap: 1.5rem;
+      width: fit-content;
+      margin-top: 0.75rem;
+    }
+  }
+
   /* Small screens: the stops are a plain column of strips under the intro */
   .path {
     display: flex;
@@ -193,6 +359,12 @@ const link = 'text-accent hover:underline underline-offset-4'
       height: 3rem;
       background-color: var(--foreground);
       opacity: 0.55;
+    }
+
+    .stop.on .dot {
+      box-shadow:
+        0 0 0 2px var(--background),
+        0 0 0 4px var(--accent);
     }
 
     .stop:hover,

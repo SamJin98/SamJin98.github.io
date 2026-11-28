@@ -75,7 +75,8 @@
 
   /* Inner pages are paper, with paint coming in from the top and the foot */
   .page {
-    padding-bottom: calc(var(--paint-width) * 0.2);
+    --meadow-height: calc(var(--paint-width) * 0.07);
+    padding-bottom: calc(var(--paint-width) * 0.085);
   }
 
   .page-sky,
@@ -96,7 +97,7 @@
 
   .page-ground {
     bottom: 0;
-    height: calc(var(--paint-width) * 0.32);
+    height: calc(var(--paint-width) * 0.14);
     background: var(--ground) bottom center / var(--paint-width) auto no-repeat;
     mask-image: linear-gradient(to bottom, transparent, #000 45%);
   }
@@ -120,7 +121,18 @@
     background-repeat: no-repeat, no-repeat, repeat-y;
   }
 
-  @media (min-width: 48rem) and (min-height: 36rem) {
+  /* No sun on small screens, where it would sit behind the header */
+  @media (max-width: 47.99rem) {
+    .scene-paint {
+      background-image: var(--ground), var(--sky-tile);
+      background-position:
+        bottom center,
+        top center;
+      background-repeat: no-repeat, repeat-y;
+    }
+  }
+
+  @media (min-width: 64rem) and (min-height: 45rem) {
     .scene {
       height: 100dvh;
       overflow: hidden;
