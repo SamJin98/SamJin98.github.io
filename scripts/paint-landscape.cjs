@@ -2,7 +2,8 @@
 //
 //   sky-top   the top of the page: sky with a sun (a moon in the dark theme)
 //   sky-tile  more sky, seamless top to bottom, repeated down the page
-//   ground    the foot of the page: hills, a gradient-descent path, a meadow
+//   ground    the foot of the page: hills and a meadow (the home page draws
+//             its descent path over the right-hand hill)
 //
 // each in a light and a dark palette. sky-top fades out at its bottom edge
 // and ground fades in at its top, so both sit over the tile without a seam.
@@ -29,7 +30,6 @@ const themes = {
     sunCore: '#f9d98a',
     hills: ['#b38d7c', '#c8934f', '#9d6a3a'],
     meadow: ['#6f7242', '#535a31'],
-    dot: '#2d2a26',
     relief: 0.42,
     jitter: 0.08
   },
@@ -42,7 +42,6 @@ const themes = {
     sunCore: '#fbf0cf',
     hills: ['#2c2433', '#402d27', '#573b25'],
     meadow: ['#2b341e', '#1c2315'],
-    dot: '#f4efe6',
     relief: 0.6,
     jitter: 0.1
   }
@@ -60,23 +59,23 @@ const field = (x, y, scale, off) => { if (!wrap) return noise(x / scale + off, y
 const g = (x, m, s) => Math.exp(-((x - m) ** 2) / (2 * s * s));
 // Ridge lines of the ground picture, as height from the bottom (0..1)
 const hills = [
-  x => 0.56 + 0.15 * g(x, 0.86, 0.17) + 0.07 * g(x, 0.12, 0.12),
-  x => 0.47 + 0.17 * g(x, 0.5, 0.15) + 0.08 * g(x, 1.0, 0.1),
-  x => 0.37 + 0.2 * g(x, 0.82, 0.13) + 0.05 * g(x, 0.2, 0.14)
+  x => 0.46 + 0.13 * g(x, 0.86, 0.17) + 0.06 * g(x, 0.12, 0.12),
+  x => 0.38 + 0.15 * g(x, 0.5, 0.15) + 0.07 * g(x, 1.0, 0.1),
+  x => 0.29 + 0.19 * g(x, 0.82, 0.13) + 0.05 * g(x, 0.2, 0.14)
 ];
-const meadowTop = x => 0.33 + 0.025 * Math.sin(x * 9) + 0.015 * Math.sin(x * 23 + 1);
+const meadowTop = x => 0.24 + 0.02 * Math.sin(x * 9) + 0.012 * Math.sin(x * 23 + 1);
 const SUN = [W * 0.93, H * 0.33, 78];
 
 // 1. Flat picture to sample colours from
 const src = document.createElement('canvas'); src.width = W; src.height = H; const s = src.getContext('2d');
 const grad = (y0, y1, a, b) => { const q = s.createLinearGradient(0, y0, 0, y1); q.addColorStop(0, a); q.addColorStop(1, b); return q; };
-s.fillStyle = kind === 'sky-top' ? grad(0, H * 0.8, t.skyTop, t.sky) : kind === 'ground' ? grad(H * 0.12, H * 0.5, t.sky, t.horizon) : t.sky; s.fillRect(0, 0, W, H);
+s.fillStyle = kind === 'sky-top' ? grad(0, H * 0.8, t.skyTop, t.sky) : kind === 'ground' ? grad(H * 0.2, H * 0.6, t.sky, t.horizon) : t.sky; s.fillRect(0, 0, W, H);
 const clouds = kind === 'sky-top' ? [[0.3, 0.3, 250, 15], [0.52, 0.5, 200, 12], [0.12, 0.62, 170, 10], [0.7, 0.72, 210, 12]] : kind === 'sky-tile' ? [[0.22, 0.3, 210, 12], [0.76, 0.62, 230, 13]] : [];
 s.fillStyle = t.cloud; clouds.forEach(([x, y, rx, ry]) => { s.beginPath(); s.ellipse(x * W, y * H, rx, ry, 0, 0, 7); s.fill(); });
 if (kind === 'sky-top') { const sun = s.createRadialGradient(SUN[0] - 18, SUN[1] - 18, 6, SUN[0], SUN[1], SUN[2]); sun.addColorStop(0, t.sunCore); sun.addColorStop(1, t.sun); s.fillStyle = sun; s.beginPath(); s.arc(SUN[0], SUN[1], SUN[2], 0, 7); s.fill(); }
 if (kind === 'ground') {
   const fill = (f, colour) => { s.fillStyle = colour; s.beginPath(); s.moveTo(0, H); for (let x = 0; x <= W; x += 8) s.lineTo(x, H - f(x / W) * H); s.lineTo(W, H); s.fill(); };
-  hills.forEach((f, i) => fill(f, t.hills[i])); fill(meadowTop, grad(H * 0.67, H, t.meadow[0], t.meadow[1]));
+  hills.forEach((f, i) => fill(f, t.hills[i])); fill(meadowTop, grad(H * 0.76, H, t.meadow[0], t.meadow[1]));
 }
 const px = s.getImageData(0, 0, W, H).data;
 
@@ -108,12 +107,7 @@ const stroke = (x, y, len, wid) => {
 const area = W * H / (1800 * 900), pad = wrap ? 0 : 50;
 [[2600, 190, 52], [5200, 120, 30], [11000, 64, 15], [12000, 30, 7]].forEach(([n, len, wid]) => { for (let i = 0; i < n * area; i++) stroke(rnd() * (W + 100) - 50, rnd() * (H + pad * 2) - pad, len, wid); });
 
-// 3. Gradient descent, dabbed on top: down the right hill into the valley
-if (kind === 'ground') { c.fillStyle = t.dot; hx.fillStyle = '#f0f0f0'; const f3 = hills[2];
-  for (let i = 0; i <= 9; i++) { const x = 0.82 - 0.017 * i * (1 + i * 0.1), last = i === 9, r = last ? 10 : 4.6, cx = x * W, cy = H - f3(x) * H - 14;
-    [c, hx].forEach(q => { q.beginPath(); q.arc(cx, cy, r, 0, 7); q.fill(); }); } }
-
-// 4. Light the paint from the top left using the height canvas
+// 3. Light the paint from the top left using the height canvas
 const blur = document.createElement('canvas'); blur.width = W; blur.height = H; const bq = blur.getContext('2d'); bq.filter = 'blur(1.1px)'; bq.drawImage(hc, 0, 0);
 const hd = bq.getImageData(0, 0, W, H).data, m = c.getImageData(0, 0, W, H), d = m.data;
 const at = (x, y) => hd[(((y + H) % H) * W + Math.min(W - 1, Math.max(0, x))) * 4];
@@ -122,7 +116,7 @@ for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const k = (y * W + x) 
   const l = 1 + Math.max(-.5, Math.min(.5, e * 2.2)) * t.relief + (rnd() - .5) * .035;
   d[k] = Math.min(255, d[k] * l); d[k + 1] = Math.min(255, d[k + 1] * l); d[k + 2] = Math.min(255, d[k + 2] * l); }
 
-// 5. Fade the edge that meets the tile, raggedly, like paint thinning out
+// 4. Fade the edge that meets the tile, raggedly, like paint thinning out
 if (!wrap) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const from = kind === 'sky-top' ? H - 1 - y : y, n = noise(x / 90, y / 60) * 70;
   const a = Math.max(0, Math.min(1, (from - 10 - n) / 130)); d[(y * W + x) * 4 + 3] = 255 * a * a * (3 - 2 * a); }
 c.putImageData(m, 0, 0);

@@ -47,41 +47,92 @@
     scroll-behavior: smooth;
   }
 
-  /* The whole page is one painting: sky with a sun at the top, more sky
-     repeated down the page, hills and a meadow at the foot. Content sits on
-     sheets of paper (.paper) laid over it. The pictures come from
-     scripts/paint-landscape.cjs. */
   body {
     position: relative;
-    padding-bottom: calc(max(100vw, 56rem) * 0.34);
-    background-color: var(--sky);
-    background-image:
-      url('/paint/sky-top-light.webp'), url('/paint/ground-light.webp'),
-      url('/paint/sky-tile-light.webp');
-    background-position:
-      top center,
-      bottom center,
-      top center;
-    background-size: max(100%, 56rem) auto;
-    background-repeat: no-repeat, no-repeat, repeat-y;
+    background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
-  .dark body {
-    background-image:
-      url('/paint/sky-top-dark.webp'), url('/paint/ground-dark.webp'),
-      url('/paint/sky-tile-dark.webp');
+  /* The site is painted. The pictures come from scripts/paint-landscape.cjs:
+     a sky with a sun, more sky that repeats, and hills over a meadow.
+     --paint-width is how wide they are drawn, so things laid over them
+     (the grass, the home page's path) can line up. */
+  :root {
+    --paint-width: max(100vw, 56rem);
+    --sky-top: url('/paint/sky-top-light.webp');
+    --sky-tile: url('/paint/sky-tile-light.webp');
+    --ground: url('/paint/ground-light.webp');
   }
 
-  .paper {
+  .dark {
+    --sky-top: url('/paint/sky-top-dark.webp');
+    --sky-tile: url('/paint/sky-tile-dark.webp');
+    --ground: url('/paint/ground-dark.webp');
+  }
+
+  /* Inner pages are paper, with paint coming in from the top and the foot */
+  .page {
+    padding-bottom: calc(var(--paint-width) * 0.2);
+  }
+
+  .page-sky,
+  .page-ground {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .page-sky {
+    top: 0;
+    height: 13rem;
+    background: var(--sky-tile) top center / var(--paint-width) auto;
+    mask-image: linear-gradient(to bottom, #000 30%, transparent);
+  }
+
+  .page-ground {
+    bottom: 0;
+    height: calc(var(--paint-width) * 0.32);
+    background: var(--ground) bottom center / var(--paint-width) auto no-repeat;
+    mask-image: linear-gradient(to bottom, transparent, #000 45%);
+  }
+
+  /* The home page is the whole painting, one screen tall */
+  .scene {
+    min-height: 100dvh;
+  }
+
+  .scene-paint {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--sky);
+    background-image: var(--sky-top), var(--ground), var(--sky-tile);
+    background-position:
+      top center,
+      bottom center,
+      top center;
+    background-size: var(--paint-width) auto;
+    background-repeat: no-repeat, no-repeat, repeat-y;
+  }
+
+  @media (min-width: 48rem) and (min-height: 36rem) {
+    .scene {
+      height: 100dvh;
+      overflow: hidden;
+    }
+  }
+
+  /* Text laid on the painting sits on a strip of the page's own paper */
+  .strip {
+    width: fit-content;
+    padding: 0.35rem 0.7rem;
     background-color: var(--background);
-    border-radius: 6px;
-    box-shadow:
-      0 1px 2px oklch(0 0 0 / 12%),
-      0 12px 32px -12px oklch(0 0 0 / 28%);
+    border-radius: 3px;
   }
 
   ::selection {
