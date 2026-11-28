@@ -3,7 +3,10 @@
 // First the field itself is drawn: a few thousand touches of grass and
 // flowers, each bent into an arc by the wind, by gusts crossing the field,
 // and by the animals that wander through now and then. The pointer combs
-// the grass the way it moves, and the trail it leaves springs back slowly.
+// the grass the way it moves, and the trail it leaves springs back slowly
+// and holds a little light: moonlight at night, sun by day. Fireflies
+// drift over the field at night and butterflies by day; more of them rise
+// where the pointer passes.
 // Then the whole picture is worked over like thick oil paint: colours are
 // pulled into flat dabs, and the dabs are lit from the upper left so their
 // edges and bristle furrows catch the light.
@@ -11,7 +14,7 @@
 // Without WebGL 2 the canvas stays empty and the painted ground shows.
 ---
 
-<canvas class="meadow" aria-hidden="true"></canvas>
+<canvas class="meadow" aria-hidden="true" transition:persist="meadow"></canvas>
 
 <style>
   /* Lies over the painted meadow at the foot of the page */
@@ -38,6 +41,7 @@
     life: number
     pace: number
     phase: number
+    startled: number // when the pointer last came too close
   }
 
   const palettes = {
@@ -58,7 +62,8 @@
         [207, 74, 58]
       ] as RGB[],
       relief: 1,
-      shine: 0.36
+      shine: 0.36,
+      glow: [0.2, 0.16, 0.04] as RGB
     },
     dark: {
       groundFar: [50, 60, 34] as RGB,
@@ -76,7 +81,8 @@
         [138, 58, 48]
       ] as RGB[],
       relief: 0.8,
-      shine: 0.22
+      shine: 0.22,
+      glow: [0.26, 0.34, 0.5] as RGB
     }
   }
 
@@ -111,7 +117,8 @@
   const GROUND_FS = /* glsl */ `#version 300 es
     precision highp float;
     uniform vec2 uSize;
-    uniform vec3 uGroundFar, uGroundNear;
+    uniform vec3 uGroundFar, uGroundNear, uGlow;
+    uniform sampler2D uTrail;
     in vec2 vUv;
     out vec4 outColor;
     ${TOP}
@@ -122,6 +129,7 @@
       if (p.y < edge) discard;
       float depth = (p.y - edge) / (uSize.y - edge);
       vec3 c = mix(uGroundFar, uGroundNear, depth) * (0.9 + 0.2 * noise(p * 0.06));
+      c += uGlow * texture(uTrail, vUv).g * 0.6;
       outColor = vec4(c, 1.0);
     }`
 
@@ -133,11 +141,13 @@
     uniform sampler2D uTrail;
     uniform vec2 uSize;
     uniform vec4 uStroke;  // from x, y, to x, y
-    uniform vec2 uComb;    // direction -1..1, strength
+    uniform vec3 uComb;    // direction -1..1, strength, light
     in vec2 vUv;
     out vec4 outColor;
     void main() {
-      float lean = texture(uTrail, vUv).r * 2.0 - 1.0;
+      vec4 was = texture(uTrail, vUv);
+      float lean = was.r * 2.0 - 1.0;
+      float glow = max(0.0, was.g * 0.988 - 0.002);
       lean *= 0.965;
       lean -= sign(lean) * min(abs(lean), 0.004);
       vec2 p = vec2(vUv.x, 1.0 - vUv.y) * uSize;
@@ -147,7 +157,9 @@
       float d = length((p - (a + ab * along)) * vec2(1.0, 1.25));
       float touch = exp(-d * d / (46.0 * 46.0)) * uComb.y;
       lean = mix(lean, uComb.x, clamp(touch, 0.0, 1.0));
-      outColor = vec4(lean * 0.5 + 0.5, 0.0, 0.0, 1.0);
+      // Light gathers where the pointer has been, a little wider than the comb
+      glow = max(glow, exp(-d * d / (64.0 * 64.0)) * uComb.z);
+      outColor = vec4(lean * 0.5 + 0.5, glow, 0.0, 1.0);
     }`
 
   // One touch of grass or one flower smear, bent into an arc
@@ -160,7 +172,7 @@
     uniform float uTime, uMotion;
     uniform sampler2D uTrail;
     uniform vec4 uMobs[4];   // x, y, reach, strength
-    uniform vec3 uFar, uNear;
+    uniform vec3 uFar, uNear, uGlow;
     uniform vec3 uAccents[4];
     uniform vec3 uFlowers[7];
     out vec3 vColour;
@@ -182,7 +194,8 @@
         + sin(uTime * 2.6 + aRoot.w * 6.283) * (0.05 + gust * 0.09);
 
       // The pointer's trail combs the touches over; animals push them aside
-      float combed = texture(uTrail, vec2(x / uSize.x, 1.0 - (y - h * 0.4) / uSize.y)).r * 2.0 - 1.0;
+      vec4 trail = texture(uTrail, vec2(x / uSize.x, 1.0 - (y - h * 0.4) / uSize.y));
+      float combed = trail.r * 2.0 - 1.0;
       float push = combed * 1.5;
       for (int i = 0; i < 4; i++) {
         vec2 from = vec2(x, y) - uMobs[i].xy;
@@ -213,6 +226,8 @@
       green *= 1.0 + abs(combed) * 0.22;
       vec3 petal = uFlowers[int(rnd(seed, 53.9) * 6.99)] * mix(0.86, 1.08, s);
       vColour = mix(green, petal, flower) / 255.0;
+      // The trail holds light, strongest on the tips
+      vColour += uGlow * trail.g * (0.35 + 0.65 * s);
 
       // Nearer touches cover farther ones; flowers go in a little late
       float order = (y + flower * h * 0.55) / uSize.y;
@@ -232,12 +247,13 @@
     uniform vec2 uSize;
     uniform vec4 uRect;  // centre x, feet y, width, height
     uniform vec3 uCell;  // cell, cells, direction
+    uniform float uLift; // how far off the ground it is
     out vec2 vUv;
     void main() {
       vec2 uv = aCorner * 0.5 + 0.5;
       float u = uCell.z > 0.0 ? uv.x : 1.0 - uv.x;
       vUv = vec2((uCell.x + u) / uCell.y, 1.0 - uv.y);
-      vec2 p = vec2(uRect.x + aCorner.x * uRect.z * 0.5, uRect.y - uv.y * uRect.w);
+      vec2 p = vec2(uRect.x + aCorner.x * uRect.z * 0.5, uRect.y - uLift - uv.y * uRect.w);
       float order = (uRect.y + 10.0) / uSize.y;
       gl_Position = vec4(p.x / uSize.x * 2.0 - 1.0, 1.0 - p.y / uSize.y * 2.0, 0.9 - order * 0.9, 1.0);
     }`
@@ -253,6 +269,54 @@
       float a = c.a * uAlpha;
       if (a < 0.02) discard;
       outColor = vec4(c.rgb * a, a);
+    }`
+
+  // Fireflies at night, butterflies by day: small things in the air over
+  // the field, drawn last so they stay crisp
+  const MOTE_VS = /* glsl */ `#version 300 es
+    precision highp float;
+    layout(location = 0) in vec4 aMote;  // x, y, size, alpha
+    layout(location = 1) in vec2 aLook;  // seed, wing beat 0..1
+    uniform vec2 uSize;
+    uniform float uRatio;
+    out float vAlpha, vSeed, vBeat;
+    void main() {
+      vAlpha = aMote.w;
+      vSeed = aLook.x;
+      vBeat = aLook.y;
+      gl_Position = vec4(aMote.x / uSize.x * 2.0 - 1.0, 1.0 - aMote.y / uSize.y * 2.0, 0.0, 1.0);
+      gl_PointSize = aMote.z * uRatio;
+    }`
+
+  const MOTE_FS = /* glsl */ `#version 300 es
+    precision highp float;
+    uniform float uNight;
+    in float vAlpha, vSeed, vBeat;
+    out vec4 outColor;
+    void main() {
+      vec2 p = gl_PointCoord * 2.0 - 1.0;
+      if (uNight > 0.5) {
+        // A firefly: a bright core in a soft halo, added to what is there
+        float d = dot(p, p);
+        float light = exp(-d * 26.0) + exp(-d * 4.0) * 0.4;
+        outColor = vec4(vec3(0.86, 1.0, 0.42) * light * vAlpha, 0.0);
+      } else {
+        // A butterfly: two pairs of wings that fold as they beat
+        float fold = mix(0.22, 1.0, vBeat);
+        vec2 q = vec2(abs(p.x) / fold, p.y);
+        float upper = smoothstep(0.46, 0.36, length((q - vec2(0.42, -0.2)) * vec2(1.0, 1.1)));
+        float lower = smoothstep(0.34, 0.26, length((q - vec2(0.32, 0.36)) * vec2(1.0, 1.1)));
+        float wings = max(upper, lower) * step(abs(p.x) / fold, 1.0);
+        float body = smoothstep(0.1, 0.04, abs(p.x)) * smoothstep(0.6, 0.5, abs(p.y));
+        vec3 tint = vSeed < 0.3 ? vec3(0.97, 0.95, 0.9)
+          : vSeed < 0.55 ? vec3(0.96, 0.78, 0.25)
+          : vSeed < 0.8 ? vec3(0.62, 0.66, 0.9)
+          : vec3(0.93, 0.55, 0.3);
+        tint *= 1.0 - 0.25 * smoothstep(0.2, 0.9, q.x);
+        vec3 c = mix(tint, vec3(0.2, 0.16, 0.12), body);
+        float a = max(wings, body) * vAlpha;
+        outColor = vec4(c * a, a);
+      }
     }`
 
   // Pulls the picture into flat dabs: around every point, the calmest of
@@ -356,6 +420,7 @@
     const blades = program(BLADE_VS, BLADE_FS)
     const mobs = program(MOB_VS, MOB_FS)
     const trailer = program(QUAD_VS, TRAIL_FS)
+    const air = program(MOTE_VS, MOTE_FS)
     const dab = program(QUAD_VS, DAB_FS)
     const relief = program(QUAD_VS, RELIEF_FS)
 
@@ -387,6 +452,27 @@
       gl.vertexAttribPointer(location, 4, gl.FLOAT, false, 32, offset)
       gl.vertexAttribDivisor(location, 1)
     }
+
+    // The fireflies and butterflies: one point each, moved every frame
+    interface Mote {
+      x: number
+      y: number
+      vx: number
+      vy: number
+      seed: number
+      born: number
+      life: number // Infinity for the ones that are always about
+    }
+    let motes: Mote[] = []
+    let travelled = 0
+    const flock = gl.createVertexArray()
+    gl.bindVertexArray(flock)
+    const points = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, points)
+    gl.enableVertexAttribArray(0)
+    gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 24, 0)
+    gl.enableVertexAttribArray(1)
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 24, 16)
     gl.bindVertexArray(null)
 
     // Two pictures to paint into: the field, then the field in dabs
@@ -484,9 +570,80 @@
           )
       }
 
+      release()
       count = data.length / 8
       gl.bindBuffer(gl.ARRAY_BUFFER, roots)
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW)
+    }
+
+    // The ones that are always about: a handful of fireflies, fewer butterflies
+    const release = () => {
+      const night = theme() === 'dark'
+      motes = []
+      if (still) return
+      const n = Math.round((width / 1700) * (night ? 10 : 3)) + 1
+      for (let i = 0; i < n; i++)
+        motes.push({
+          x: Math.random() * width,
+          y: height * (0.15 + Math.random() * 0.5),
+          vx: 0,
+          vy: 0,
+          seed: Math.random(),
+          born: -1e4,
+          life: Infinity
+        })
+    }
+
+    // They wander, keep to the air over the grass, shy away from the
+    // pointer, and new ones rise where it moves through the field
+    const flutter = (t: number, dt: number, speed: number) => {
+      const night = theme() === 'dark'
+      const inField = pointer.y > -10 && pointer.y < height
+      if (inField && speed < 400) travelled += speed
+      const limit = night ? 40 : 12
+      if (!still && travelled > (night ? 45 : 110) && motes.length < limit) {
+        travelled = 0
+        motes.push({
+          x: pointer.x + (Math.random() - 0.5) * 20,
+          y: Math.min(height * 0.9, pointer.y),
+          vx: (Math.random() - 0.5) * 40,
+          vy: -20 - Math.random() * 30,
+          seed: Math.random(),
+          born: t,
+          life: 4 + Math.random() * 4
+        })
+      }
+      motes = motes.filter(mote => t - mote.born < mote.life)
+      const data = new Float32Array(motes.length * 6)
+      motes.forEach((mote, i) => {
+        const k = mote.seed * 40
+        const pace = night ? 12 : 30
+        let ax = (Math.cos(t * (night ? 0.5 : 0.9) + k) + (night ? 0 : mote.seed - 0.5)) * pace - mote.vx
+        let ay = Math.sin(t * (night ? 0.8 : 2.3) + k * 1.7) * pace * 0.6 - mote.vy
+        // Keep to the air over the grass
+        const home = height * (0.2 + mote.seed * 0.45)
+        ay += (home - mote.y) * 0.8
+        const dx = mote.x - pointer.x
+        const dy = mote.y - pointer.y
+        const near = Math.hypot(dx, dy) || 1
+        if (near < 70) {
+          ax += (dx / near) * (1 - near / 70) * 400
+          ay += (dy / near) * (1 - near / 70) * 400
+        }
+        mote.vx += ax * dt * 2
+        mote.vy += ay * dt * 2
+        mote.x += mote.vx * dt
+        mote.y += mote.vy * dt
+        if (mote.life === Infinity) mote.x = ((mote.x % width) + width) % width
+        const age = t - mote.born
+        const fade = Math.min(1, age / 0.6, (mote.life - age) / 1.2)
+        const blink = night ? 0.3 + 0.7 * Math.max(0, Math.sin(t * 1.5 + k)) ** 2 : 1
+        data.set(
+          [mote.x, mote.y, night ? 22 : 15 + mote.seed * 6, fade * blink, mote.seed, Math.abs(Math.sin(t * 13 + k))],
+          i * 6
+        )
+      })
+      return data
     }
 
     // Now and then one wanders in, ambles a little way with pauses to
@@ -494,8 +651,18 @@
     const herd = (t: number, dt: number) => {
       animals = animals.filter(animal => t - animal.born < animal.life)
       for (const animal of animals) {
+        // The pointer coming close startles it: it turns away and bolts
+        const reach = animal.size * 0.85
+        const dx = animal.x - pointer.targetX
+        const dy = animal.y - animal.size * 0.5 - pointer.targetY
+        if (!still && Math.hypot(dx, dy) < reach && t - animal.startled > 0.6) {
+          animal.startled = t
+          animal.direction = dx >= 0 ? 1 : -1
+          animal.life = Math.max(animal.life, t - animal.born + 5)
+        }
+        const fright = Math.max(0, 1 - (t - animal.startled) / 1.8)
         const stride = Math.max(0, Math.sin((t - animal.born) * 0.45 + animal.phase))
-        animal.x += animal.direction * animal.pace * stride * dt
+        animal.x += animal.direction * (animal.pace * stride + 150 * fright * fright) * dt
       }
       if (still || t < nextAnimal || animals.length >= 2) return
       nextAnimal = t + 9 + Math.random() * 16
@@ -511,7 +678,8 @@
         born: t,
         life: 16 + Math.random() * 12,
         pace: 7 + Math.random() * 6,
-        phase: Math.random() * 6
+        phase: Math.random() * 6,
+        startled: -1e4
       })
     }
 
@@ -543,7 +711,13 @@
       gl.uniform1i(trailer.uniforms.uTrail, 0)
       gl.uniform2f(trailer.uniforms.uSize, width, height)
       gl.uniform4f(trailer.uniforms.uStroke, pointer.fromX, pointer.fromY, pointer.x, pointer.y)
-      gl.uniform2f(trailer.uniforms.uComb, pointer.comb, jumped || still ? 0 : Math.min(1, speed / 5) * 0.7)
+      const live = jumped || still ? 0 : 1
+      gl.uniform3f(
+        trailer.uniforms.uComb,
+        pointer.comb,
+        live * Math.min(1, speed / 5) * 0.7,
+        live * Math.min(1, speed / 3)
+      )
       gl.bindVertexArray(quad)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
       trail = [trail[1], trail[0]]
@@ -561,6 +735,10 @@
       gl.uniform2f(ground.uniforms.uSize, width, height)
       gl.uniform3fv(ground.uniforms.uGroundFar, palette.groundFar.map(v => v / 255))
       gl.uniform3fv(ground.uniforms.uGroundNear, palette.groundNear.map(v => v / 255))
+      gl.uniform3fv(ground.uniforms.uGlow, palette.glow)
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, trail[0].texture)
+      gl.uniform1i(ground.uniforms.uTrail, 0)
       gl.bindVertexArray(quad)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
@@ -580,6 +758,7 @@
       gl.uniform4fv(blades.uniforms.uMobs, pushes)
       gl.uniform3fv(blades.uniforms.uFar, palette.far)
       gl.uniform3fv(blades.uniforms.uNear, palette.near)
+      gl.uniform3fv(blades.uniforms.uGlow, palette.glow)
       gl.uniform3fv(blades.uniforms.uAccents, palette.accents.flat())
       gl.uniform3fv(blades.uniforms.uFlowers, palette.flowers.flat())
       gl.bindVertexArray(field)
@@ -601,15 +780,19 @@
         for (const animal of animals) {
           const age = t - animal.born
           const stride = Math.max(0, Math.sin(age * 0.45 + animal.phase))
-          const bob = Math.sin(age * 5 + animal.phase) * stride * 0.8
+          // It walks with a small bob, and hops while it is frightened
+          const fright = Math.max(0, 1 - (t - animal.startled) / 1.8)
+          const hop = Math.abs(Math.sin((t - animal.startled) * 11)) * fright * animal.size * 0.22
+          const bob = Math.sin(age * 5 + animal.phase) * stride * 0.8 - hop
           gl.uniform4f(
             mobs.uniforms.uRect,
             animal.x,
-            animal.y + bob,
+            animal.y,
             (animal.size * cell.width) / cell.height,
             animal.size
           )
           gl.uniform3f(mobs.uniforms.uCell, animal.kind, cell.count, animal.direction)
+          gl.uniform1f(mobs.uniforms.uLift, -bob)
           gl.uniform1f(mobs.uniforms.uAlpha, fade(animal))
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
         }
@@ -640,6 +823,22 @@
       gl.uniform1f(relief.uniforms.uRelief, palette.relief)
       gl.uniform1f(relief.uniforms.uShine, palette.shine)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+      // 4. What is in the air
+      const flying = flutter(t, dt, speed)
+      if (flying.length) {
+        gl.enable(gl.BLEND)
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+        gl.useProgram(air.made)
+        gl.uniform2f(air.uniforms.uSize, width, height)
+        gl.uniform1f(air.uniforms.uRatio, reach)
+        gl.uniform1f(air.uniforms.uNight, theme() === 'dark' ? 1 : 0)
+        gl.bindVertexArray(flock)
+        gl.bindBuffer(gl.ARRAY_BUFFER, points)
+        gl.bufferData(gl.ARRAY_BUFFER, flying, gl.DYNAMIC_DRAW)
+        gl.drawArrays(gl.POINTS, 0, flying.length / 6)
+        gl.disable(gl.BLEND)
+      }
     }
 
     const resize = () => {
@@ -692,7 +891,12 @@
     addEventListener('resize', resize)
 
     // Repaint in the other palette when the theme changes
+    let shown = theme()
     new MutationObserver(() => {
+      // A page swap rewrites the class without changing the theme
+      if (shown === theme()) return
+      shown = theme()
+      release()
       if (!frame) paint(performance.now())
     }).observe(root, { attributes: true, attributeFilter: ['class'] })
 

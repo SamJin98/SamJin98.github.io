@@ -161,6 +161,8 @@
     aspect-ratio: 600 / 420;
     background: var(--clouds) 0 0 / 300% 100% no-repeat;
     animation: drift 70s ease-in-out infinite alternate;
+    /* Pushed aside by the pointer, then settling back */
+    transition: translate 1.6s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
   .cloud:nth-child(1) {
@@ -208,8 +210,60 @@
     }
   }
 
+  /* The sun or moon in the corner is a button over the painted one. A halo
+     grows around it as the pointer comes near, and pressing it changes
+     day to night. */
+  .page-sun {
+    display: none;
+    position: absolute;
+    top: calc(var(--paint-width) * 0.068);
+    left: 95%;
+    width: calc(var(--paint-width) * 0.086);
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    border-radius: 50%;
+    cursor: pointer;
+    --near: 0;
+    --halo: oklch(0.9 0.14 90);
+    transition: scale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .dark .page-sun {
+    --halo: oklch(0.88 0.05 250);
+  }
+
+  .page-sun::before {
+    content: '';
+    position: absolute;
+    inset: -70%;
+    border-radius: 50%;
+    background: radial-gradient(
+      closest-side,
+      transparent 36%,
+      color-mix(in oklab, var(--halo) 60%, transparent) 44%,
+      color-mix(in oklab, var(--halo) 22%, transparent) 66%,
+      transparent
+    );
+    opacity: calc(var(--near) * 0.75);
+    scale: calc(0.8 + var(--near) * 0.25);
+    pointer-events: none;
+    transition:
+      opacity 0.4s,
+      scale 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .page-sun:hover::before {
+    opacity: 1;
+    scale: 1.15;
+  }
+
+  .page-sun:active {
+    scale: 0.94;
+  }
+
   @media (min-width: 80rem) {
-    .page-clouds {
+    .page-clouds,
+    .page-sun {
       display: block;
     }
   }
@@ -256,9 +310,6 @@
 }
 
 /* Page transitions between pages of the site (titles paired in Layout.astro) */
-@view-transition {
-  navigation: auto;
-}
 
 /* The page itself swaps at once (a cross-fade reads as a flash); only the
    title moves */
@@ -342,11 +393,5 @@
   }
   40% {
     opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  @view-transition {
-    navigation: none;
   }
 }

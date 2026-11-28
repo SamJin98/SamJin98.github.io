@@ -91,7 +91,7 @@ const isActive = (href: string) =>
     root.classList.remove('theme-switching')
   }
 
-  document.getElementById('theme-toggle')?.addEventListener('click', event => {
+  const toggle = (event: Event) => {
     const dark = !root.classList.contains('dark')
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (!document.startViewTransition || reduced) return apply(dark)
@@ -124,5 +124,17 @@ const isActive = (href: string) =>
       )
     })
     transition.finished.finally(() => root.classList.remove('theme-transition'))
-  })
+  }
+  // The header button, and the sun or moon in the corner of the sky. The
+  // header is swapped with each page, so its button is bound again; the
+  // sun stays and is bound once.
+  document.addEventListener('astro:page-load', () =>
+    document
+      .querySelectorAll<HTMLElement>('#theme-toggle, [data-theme-toggle]')
+      .forEach(el => {
+        if (el.dataset.bound) return
+        el.dataset.bound = 'true'
+        el.addEventListener('click', toggle)
+      })
+  )
 </script>

@@ -120,43 +120,47 @@ const month = (date: Date) =>
 </style>
 
 <script>
-  const chips = document.querySelectorAll<HTMLButtonElement>('#chips button')
-  const list = document.getElementById('posts')!
-  const known = new Set([...chips].map(chip => chip.dataset.tag))
+  // Runs for every page shown: pages are swapped in place, not reloaded
+  document.addEventListener('astro:page-load', () => {
+    const chips = document.querySelectorAll<HTMLButtonElement>('#chips button')
+    const list = document.getElementById('posts')
+    if (!list) return
+    const known = new Set([...chips].map(chip => chip.dataset.tag))
 
-  const show = (tag: string) => {
-    chips.forEach(chip =>
-      chip.setAttribute('aria-pressed', String(chip.dataset.tag === tag))
-    )
-    list.toggleAttribute('data-filtered', tag !== '')
-    list.querySelectorAll('section').forEach(section => {
-      let any = false
-      section.querySelectorAll<HTMLElement>('li').forEach(item => {
-        const match = !tag || item.dataset.tags!.split(',').includes(tag)
-        item.hidden = !match
-        any ||= match
+    const show = (tag: string) => {
+      chips.forEach(chip =>
+        chip.setAttribute('aria-pressed', String(chip.dataset.tag === tag))
+      )
+      list.toggleAttribute('data-filtered', tag !== '')
+      list.querySelectorAll('section').forEach(section => {
+        let any = false
+        section.querySelectorAll<HTMLElement>('li').forEach(item => {
+          const match = !tag || item.dataset.tags!.split(',').includes(tag)
+          item.hidden = !match
+          any ||= match
+        })
+        section.hidden = !any
       })
-      section.hidden = !any
-    })
-  }
+    }
 
-  // The chosen tag lives in the URL so a filtered list can be linked to and
-  // survives going back from a post
-  const fromUrl = () => {
-    const tag = new URLSearchParams(location.search).get('tag') ?? ''
-    show(known.has(tag) ? tag : '')
-  }
+    // The chosen tag lives in the URL so a filtered list can be linked to and
+    // survives going back from a post
+    const fromUrl = () => {
+      const tag = new URLSearchParams(location.search).get('tag') ?? ''
+      show(known.has(tag) ? tag : '')
+    }
 
-  chips.forEach(chip =>
-    chip.addEventListener('click', () => {
-      const tag = chip.dataset.tag ?? ''
-      const url = new URL(location.href)
-      if (tag) url.searchParams.set('tag', tag)
-      else url.searchParams.delete('tag')
-      history.replaceState(null, '', url)
-      show(tag)
-    })
-  )
-  addEventListener('pageshow', fromUrl)
-  fromUrl()
+    chips.forEach(chip =>
+      chip.addEventListener('click', () => {
+        const tag = chip.dataset.tag ?? ''
+        const url = new URL(location.href)
+        if (tag) url.searchParams.set('tag', tag)
+        else url.searchParams.delete('tag')
+        // Keep the router's state, or going back would not swap the page
+        history.replaceState(history.state, '', url)
+        show(tag)
+      })
+    )
+    fromUrl()
+  })
 </script>

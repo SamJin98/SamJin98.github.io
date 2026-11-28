@@ -214,16 +214,19 @@ const link = 'text-accent hover:underline underline-offset-4'
 </style>
 
 <script>
-  // Hovering a job highlights its checkpoint on the curve, and the other way
-  const linked = document.querySelectorAll<HTMLElement | SVGElement>(
-    '#jobs [data-job], .curve [data-job]'
-  )
-  const highlight = (key: string | undefined) =>
-    linked.forEach(el => el.classList.toggle('on', el.dataset.job === key))
+  // Runs for every page shown: pages are swapped in place, not reloaded
+  document.addEventListener('astro:page-load', () => {
+    // Hovering a job highlights its checkpoint on the curve, and the other way
+    const linked = document.querySelectorAll<HTMLElement | SVGElement>(
+      '#jobs [data-job], .curve [data-job]'
+    )
+    const highlight = (key: string | undefined) =>
+      linked.forEach(el => el.classList.toggle('on', el.dataset.job === key))
 
-  linked.forEach(el => {
-    el.addEventListener('mouseenter', () => highlight(el.dataset.job))
-    el.addEventListener('click', () => highlight(el.dataset.job))
+    linked.forEach(el => {
+      el.addEventListener('mouseenter', () => highlight(el.dataset.job))
+      el.addEventListener('click', () => highlight(el.dataset.job))
+    })
+    highlight(document.querySelector<HTMLElement>('#jobs [data-job]')?.dataset.job)
   })
-  highlight(document.querySelector<HTMLElement>('#jobs [data-job]')?.dataset.job)
 </script>

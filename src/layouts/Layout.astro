@@ -3,15 +3,15 @@ import '../styles/global.css'
 import '../styles/mdx.css'
 import 'temml/dist/Temml-Local.css'
 import Header from '@/components/Header.astro'
-import Footer from '@/components/Footer.astro'
 import Meadow from '@/components/Meadow.astro'
+import { ClientRouter } from 'astro:transitions'
 
 interface Props {
   title?: string
   description?: string
   /** List pages use the full container; article pages stay at reading width */
   wide?: boolean
-  /** The home page: no footer, so it fits one screen */
+  /** The home page: laid out to fit one screen */
   home?: boolean
 }
 
@@ -26,7 +26,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" transition:animate="none">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -35,22 +35,32 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
     <meta name="description" content={description} />
     <title>{title}</title>
     <link rel="canonical" href={canonical} />
+    <ClientRouter />
     <script is:inline>
-      const theme =
-        localStorage.getItem('theme') ??
-        (window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'dark'
-          : 'light')
-      document.documentElement.classList.toggle('dark', theme === 'dark')
+      // The theme is set before anything is drawn, and again after each
+      // page is swapped in, since the swap brings the new page's <html>
+      ;(() => {
+        const set = () => {
+          const theme =
+            localStorage.getItem('theme') ??
+            (window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light')
+          document.documentElement.classList.toggle('dark', theme === 'dark')
+        }
+        set()
+        document.addEventListener('astro:after-swap', set)
+      })()
     </script>
     <script is:inline>
       // Page transitions: the title you click grows into the page heading
       // (and shrinks back). Only that pair is named, and only for the swap,
       // so the theme toggle's transition is left alone.
       ;(() => {
-        if (!('onpagereveal' in window)) return
         const path = url => new URL(url).pathname.replace(/(.)\/$/, '$1')
         let named = null
+        let size = 0
+        let from = ''
         const clear = () => {
           if (named) named.style.viewTransitionName = ''
           named = null
@@ -75,47 +85,31 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
           el = find(path(from))
           if (el) return visible(el) ? (name(el), 'shrink') : undefined
         }
-        // Where the swap goes is handed to the next page through
-        // sessionStorage: on a back/forward restored from the page cache,
-        // navigation.activation can still describe an older visit.
-        let lastClicked = null
-        addEventListener('click', e => {
-          const a = e.target.closest?.('a[href]')
-          if (a) lastClicked = a.href
+        // Before the old page is captured: name its title
+        document.addEventListener('astro:before-preparation', e => {
+          from = e.from.href
+          size = pair(from, e.to.href) ? fontSize(named) : 0
         })
-        addEventListener('pageswap', e => {
-          sessionStorage.removeItem('vt')
-          clear()
-          const to = e.activation?.entry?.url ?? lastClicked
-          if (!e.viewTransition || !to) return
-          if (pair(location.href, to))
-            sessionStorage.setItem(
-              'vt',
-              JSON.stringify([location.href, to, fontSize(named)])
-            )
-        })
-        addEventListener('pagereveal', e => {
-          clear()
-          const saved = sessionStorage.getItem('vt')
-          sessionStorage.removeItem('vt')
-          if (!e.viewTransition || !saved) return
-          const [from, to, size] = JSON.parse(saved)
-          if (path(to) !== path(location.href)) return
+        // The new page is in place: name the matching title there
+        document.addEventListener('astro:after-swap', () => {
+          named = null
+          if (!size) return
           const root = document.documentElement
           const move = pair(from, location.href)
-          if (move) root.dataset.move = move
+          if (!move) return
+          root.dataset.move = move
           // List titles differ in size from page to page, so the scale is
           // measured from the two titles instead of fixed in CSS
-          if (move && size) {
-            const here = fontSize(named)
-            root.style.setProperty(
-              '--title-ratio',
-              String(Math.min(size, here) / Math.max(size, here))
-            )
-          }
-          e.viewTransition.finished.finally(() => {
+          const here = fontSize(named)
+          root.style.setProperty(
+            '--title-ratio',
+            String(Math.min(size, here) / Math.max(size, here))
+          )
+        })
+        document.addEventListener('astro:before-swap', e => {
+          e.viewTransition?.finished.finally(() => {
             clear()
-            delete root.dataset.move
+            delete document.documentElement.dataset.move
           })
         })
       })()
@@ -139,14 +133,25 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
     </script>
   </head>
   <body class="page min-h-screen flex flex-col">
-    <div class="page-sky" aria-hidden="true"></div>
-    <div class="page-clouds" aria-hidden="true">
+    <!-- The sky, clouds, sun, hills and meadow are kept from page to page;
+         only the content between them is swapped -->
+    <div class="page-sky" aria-hidden="true" transition:persist="sky"></div>
+    <div class="page-clouds" aria-hidden="true" transition:persist="clouds">
       <div class="cloud"></div>
       <div class="cloud"></div>
       <div class="cloud"></div>
       <div class="cloud"></div>
     </div>
-    <div class="page-ground" aria-hidden="true"></div>
+    <!-- The sun or moon: it glows as the pointer nears and switches the theme when pressed.
+         The header button does the same for keyboards and screen readers. -->
+    <button
+      class="page-sun"
+      type="button"
+      data-theme-toggle
+      tabindex="-1"
+      aria-hidden="true"
+      transition:persist="sun"></button>
+    <div class="page-ground" aria-hidden="true" transition:persist="ground"></div>
     <div class="mx-auto w-full max-w-5xl flex-1 flex flex-col px-6">
       <Header pathname={Astro.url.pathname} />
       <main
@@ -158,8 +163,51 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
       >
         <slot />
       </main>
-      {!home && <Footer />}
     </div>
     <Meadow />
+    <script>
+      // The sky notices the pointer: clouds drift out of its way and settle
+      // back, and the sun or moon glows brighter the nearer it comes
+      const clouds = [...document.querySelectorAll<HTMLElement>('.cloud')]
+      const sun = document.querySelector<HTMLElement>('.page-sun')
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+      const pushed = new Map<HTMLElement, [number, number]>()
+      let queued = false
+      let x = 0
+      let y = 0
+
+      const react = () => {
+        queued = false
+        for (const cloud of clouds) {
+          const box = cloud.getBoundingClientRect()
+          if (!box.width) continue
+          const [px, py] = pushed.get(cloud) ?? [0, 0]
+          // Where the cloud rests, without the push it already has
+          const dx = box.left + box.width / 2 - px - x
+          const dy = box.top + box.height / 2 - py - y
+          const reach = box.width * 0.9
+          const distance = Math.hypot(dx, dy) || 1
+          const push = distance < reach ? (1 - distance / reach) ** 2 * box.width * 0.45 : 0
+          const next: [number, number] = [(dx / distance) * push, (dy / distance) * push * 0.5]
+          pushed.set(cloud, next)
+          cloud.style.translate = `${next[0].toFixed(1)}px ${next[1].toFixed(1)}px`
+        }
+        if (sun) {
+          const box = sun.getBoundingClientRect()
+          const distance = Math.hypot(box.left + box.width / 2 - x, box.top + box.height / 2 - y)
+          sun.style.setProperty('--near', Math.max(0, 1 - distance / (box.width * 3)).toFixed(3))
+        }
+      }
+
+      if (!still)
+        addEventListener('pointermove', event => {
+          x = event.clientX
+          y = event.clientY
+          if (!queued) {
+            queued = true
+            requestAnimationFrame(react)
+          }
+        })
+    </script>
   </body>
 </html>

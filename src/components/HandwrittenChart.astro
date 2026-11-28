@@ -301,96 +301,99 @@ const data = JSON.stringify(cohorts.map(({ id, label, tone, points, projectedFro
 </style>
 
 <script>
-  type Cohort = {
-    id: string
-    label: string
-    tone: string
-    points: [number, number][]
-    projectedFrom?: number
-  }
-
-  const valueAt = (pts: [number, number][], m: number) => {
-    for (let i = 1; i < pts.length; i++) {
-      const [m0, p0] = pts[i - 1]
-      const [m1, p1] = pts[i]
-      if (m <= m1) return p0 + ((p1 - p0) * (m - m0)) / (m1 - m0)
-    }
-    return pts[pts.length - 1][1]
-  }
-
-  for (const fig of document.querySelectorAll<HTMLElement>('.hw-chart')) {
-    const cohorts: Cohort[] = JSON.parse(fig.dataset.chart!)
-    const g = JSON.parse(fig.dataset.geom!)
-    const svg = fig.querySelector('svg')!
-    const hit = fig.querySelector<SVGRectElement>('.hit')!
-    const cursor = fig.querySelector<SVGLineElement>('.cursor')!
-    const readout = fig.querySelector<HTMLElement>('.readout')!
-    const frame = fig.querySelector<HTMLElement>('.frame')!
-    const x = (m: number) => g.left + (m / 24) * (g.right - g.left)
-    const y = (p: number) => g.bottom - (p / 100) * (g.bottom - g.top)
-
-    // Draw the lines in when the chart scrolls into view
-    if ('IntersectionObserver' in window) {
-      fig.dataset.anim = 'pending'
-      const io = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((e) => e.isIntersecting)) {
-            fig.dataset.anim = 'run'
-            io.disconnect()
-          }
-        },
-        { threshold: 0.4 }
-      )
-      io.observe(fig)
+  // Runs for every page shown: pages are swapped in place, not reloaded
+  document.addEventListener('astro:page-load', () => {
+    type Cohort = {
+      id: string
+      label: string
+      tone: string
+      points: [number, number][]
+      projectedFrom?: number
     }
 
-    const show = (clientX: number) => {
-      const pt = svg.createSVGPoint()
-      pt.x = clientX
-      pt.y = 0
-      const local = pt.matrixTransform(svg.getScreenCTM()!.inverse())
-      const m = Math.max(0, Math.min(24, ((local.x - g.left) / (g.right - g.left)) * 24))
-      const month = Math.round(m)
-      const cx = x(month)
-      cursor.setAttribute('x1', String(cx))
-      cursor.setAttribute('x2', String(cx))
-
-      const rows = cohorts.map((c) => {
-        const v = valueAt(c.points, month)
-        const dot = fig.querySelector<SVGCircleElement>(`.series[data-id="${c.id}"] .dot`)!
-        dot.setAttribute('cx', String(cx))
-        dot.setAttribute('cy', String(y(v)))
-        const guess = c.projectedFrom !== undefined && month > c.projectedFrom ? ' (guess)' : ''
-        return `<div class="row ${c.tone}"><span class="sw"></span>${c.label}${guess}<b>${Math.round(v)}%</b></div>`
-      })
-      readout.innerHTML = `<div class="head">Month ${month}</div>${rows.join('')}`
-
-      // Keep the readout inside the frame, on the side away from the cursor
-      const scale = frame.clientWidth / g.W
-      const px = cx * scale
-      const w = readout.offsetWidth
-      const leftPos = px + 14 + w > frame.clientWidth ? px - 14 - w : px + 14
-      readout.style.left = `${Math.max(0, leftPos)}px`
-      readout.style.top = `${g.top * scale}px`
-      fig.classList.add('active')
+    const valueAt = (pts: [number, number][], m: number) => {
+      for (let i = 1; i < pts.length; i++) {
+        const [m0, p0] = pts[i - 1]
+        const [m1, p1] = pts[i]
+        if (m <= m1) return p0 + ((p1 - p0) * (m - m0)) / (m1 - m0)
+      }
+      return pts[pts.length - 1][1]
     }
 
-    const hide = () => fig.classList.remove('active')
+    for (const fig of document.querySelectorAll<HTMLElement>('.hw-chart')) {
+      const cohorts: Cohort[] = JSON.parse(fig.dataset.chart!)
+      const g = JSON.parse(fig.dataset.geom!)
+      const svg = fig.querySelector('svg')!
+      const hit = fig.querySelector<SVGRectElement>('.hit')!
+      const cursor = fig.querySelector<SVGLineElement>('.cursor')!
+      const readout = fig.querySelector<HTMLElement>('.readout')!
+      const frame = fig.querySelector<HTMLElement>('.frame')!
+      const x = (m: number) => g.left + (m / 24) * (g.right - g.left)
+      const y = (p: number) => g.bottom - (p / 100) * (g.bottom - g.top)
 
-    hit.addEventListener('pointermove', (e) => show(e.clientX))
-    hit.addEventListener('pointerdown', (e) => show(e.clientX))
-    hit.addEventListener('pointerleave', hide)
+      // Draw the lines in when the chart scrolls into view
+      if ('IntersectionObserver' in window) {
+        fig.dataset.anim = 'pending'
+        const io = new IntersectionObserver(
+          (entries) => {
+            if (entries.some((e) => e.isIntersecting)) {
+              fig.dataset.anim = 'run'
+              io.disconnect()
+            }
+          },
+          { threshold: 0.4 }
+        )
+        io.observe(fig)
+      }
 
-    for (const s of fig.querySelectorAll<SVGGElement>('.series')) {
-      const label = s.querySelector('.label')!
-      label.addEventListener('pointerenter', () => {
-        fig.classList.add('focus')
-        s.classList.add('focused')
-      })
-      label.addEventListener('pointerleave', () => {
-        fig.classList.remove('focus')
-        s.classList.remove('focused')
-      })
+      const show = (clientX: number) => {
+        const pt = svg.createSVGPoint()
+        pt.x = clientX
+        pt.y = 0
+        const local = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+        const m = Math.max(0, Math.min(24, ((local.x - g.left) / (g.right - g.left)) * 24))
+        const month = Math.round(m)
+        const cx = x(month)
+        cursor.setAttribute('x1', String(cx))
+        cursor.setAttribute('x2', String(cx))
+
+        const rows = cohorts.map((c) => {
+          const v = valueAt(c.points, month)
+          const dot = fig.querySelector<SVGCircleElement>(`.series[data-id="${c.id}"] .dot`)!
+          dot.setAttribute('cx', String(cx))
+          dot.setAttribute('cy', String(y(v)))
+          const guess = c.projectedFrom !== undefined && month > c.projectedFrom ? ' (guess)' : ''
+          return `<div class="row ${c.tone}"><span class="sw"></span>${c.label}${guess}<b>${Math.round(v)}%</b></div>`
+        })
+        readout.innerHTML = `<div class="head">Month ${month}</div>${rows.join('')}`
+
+        // Keep the readout inside the frame, on the side away from the cursor
+        const scale = frame.clientWidth / g.W
+        const px = cx * scale
+        const w = readout.offsetWidth
+        const leftPos = px + 14 + w > frame.clientWidth ? px - 14 - w : px + 14
+        readout.style.left = `${Math.max(0, leftPos)}px`
+        readout.style.top = `${g.top * scale}px`
+        fig.classList.add('active')
+      }
+
+      const hide = () => fig.classList.remove('active')
+
+      hit.addEventListener('pointermove', (e) => show(e.clientX))
+      hit.addEventListener('pointerdown', (e) => show(e.clientX))
+      hit.addEventListener('pointerleave', hide)
+
+      for (const s of fig.querySelectorAll<SVGGElement>('.series')) {
+        const label = s.querySelector('.label')!
+        label.addEventListener('pointerenter', () => {
+          fig.classList.add('focus')
+          s.classList.add('focused')
+        })
+        label.addEventListener('pointerleave', () => {
+          fig.classList.remove('focus')
+          s.classList.remove('focused')
+        })
+      }
     }
-  }
+  })
 </script>
