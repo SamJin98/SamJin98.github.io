@@ -2,8 +2,9 @@
 //
 //   sky-top   the top of the page: sky with a sun (a moon in the dark theme)
 //   sky-tile  more sky, seamless top to bottom, repeated down the page
-//   ground    the foot of the page: hills and a meadow (the home page draws
-//             its descent path over the right-hand hill)
+//   ground    the foot of the page: hills and a meadow
+//   paper     the page itself: one flat colour laid on thickly, seamless top
+//             to bottom, so text stays readable over it
 //
 // each in a light and a dark palette. sky-top fades out at its bottom edge
 // and ground fades in at its top, so both sit over the tile without a seam.
@@ -18,7 +19,7 @@ const path = require('path')
 const fs = require('fs')
 
 const W = 1800
-const sizes = { 'sky-top': 720, 'sky-tile': 600, ground: 800 }
+const sizes = { 'sky-top': 720, 'sky-tile': 600, ground: 800, paper: 600 }
 
 const themes = {
   light: {
@@ -31,7 +32,10 @@ const themes = {
     hills: ['#b38d7c', '#c8934f', '#9d6a3a'],
     meadow: ['#6f7242', '#535a31'],
     relief: 0.42,
-    jitter: 0.08
+    jitter: 0.08,
+    paper: '#f3f0e7',
+    paperRelief: 0.1,
+    paperJitter: 0.012
   },
   dark: {
     skyTop: '#141426',
@@ -43,12 +47,16 @@ const themes = {
     hills: ['#2c2433', '#402d27', '#573b25'],
     meadow: ['#2b341e', '#1c2315'],
     relief: 0.6,
-    jitter: 0.1
+    jitter: 0.1,
+    paper: '#131211',
+    paperRelief: 0.5,
+    paperJitter: 0.03
   }
 }
 
 const page = (t, kind, H) => `<!doctype html><body style="margin:0;background:transparent"><canvas id="c" width="${W}" height="${H}"></canvas><script>
-const t = ${JSON.stringify(t)}, kind = ${JSON.stringify(kind)}, W = ${W}, H = ${H}, wrap = kind === 'sky-tile';
+const t = ${JSON.stringify(t)}, kind = ${JSON.stringify(kind)}, W = ${W}, H = ${H}, wrap = kind === 'sky-tile' || kind === 'paper';
+if (kind === 'paper') { t.sky = t.paper; t.relief = t.paperRelief; t.jitter = t.paperJitter; }
 let seed = 42; const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let x = Math.imul(seed ^ seed >>> 15, 1 | seed); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };
 const G = 64, grid = Array.from({ length: G * G }, rnd);
 const noise = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, s = v => v * v * (3 - 2 * v), a = (i, j) => grid[((j % G + G) % G) * G + ((i % G + G) % G)];
@@ -113,7 +121,7 @@ const hd = bq.getImageData(0, 0, W, H).data, m = c.getImageData(0, 0, W, H), d =
 const at = (x, y) => hd[(((y + H) % H) * W + Math.min(W - 1, Math.max(0, x))) * 4];
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const k = (y * W + x) * 4;
   const e = (wrap ? at(x - 1, y - 1) - at(x + 1, y + 1) : (y > 0 && y < H - 1 ? at(x - 1, y - 1) - at(x + 1, y + 1) : 0)) / 255; // + faces the light
-  const l = 1 + Math.max(-.5, Math.min(.5, e * 2.2)) * t.relief + (rnd() - .5) * .035;
+  const l = 1 + Math.max(-.5, Math.min(.5, e * 2.2)) * t.relief + (rnd() - .5) * (kind === 'paper' ? .012 : .035);
   d[k] = Math.min(255, d[k] * l); d[k + 1] = Math.min(255, d[k + 1] * l); d[k + 2] = Math.min(255, d[k + 2] * l); }
 
 // 4. Fade the edge that meets the tile, raggedly, like paint thinning out
@@ -129,6 +137,7 @@ document.title = 'done';
   const browser = await chromium.launch()
   for (const theme of Object.keys(themes))
     for (const kind of Object.keys(sizes)) {
+      if (process.env.ONLY && process.env.ONLY !== kind) continue
       const H = sizes[kind]
       const tab = await browser.newPage({ viewport: { width: W, height: H } })
       tab.on('pageerror', e => console.log('ERR', e.message))

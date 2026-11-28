@@ -119,7 +119,7 @@ const dots = checkpoints.map((c, i) => {
 <style>
   .axis {
     fill: none;
-    stroke: var(--curve-axis, var(--border));
+    stroke: var(--curve-axis, color-mix(in oklab, var(--foreground) 30%, transparent));
   }
   .small {
     font:
@@ -134,7 +134,7 @@ const dots = checkpoints.map((c, i) => {
     fill: none;
     stroke: var(--curve-raw, var(--faint-foreground));
     stroke-width: 1;
-    opacity: var(--curve-raw-opacity, 0.4);
+    opacity: var(--curve-raw-opacity, 0.6);
   }
   .smooth {
     fill: none;
@@ -157,7 +157,7 @@ const dots = checkpoints.map((c, i) => {
     fill: var(--curve-text, var(--muted-foreground));
   }
   .stem {
-    stroke: var(--curve-axis, var(--border));
+    stroke: var(--curve-axis, color-mix(in oklab, var(--foreground) 30%, transparent));
   }
   /* Only the highlighted job is named, so the line stays clean */
   .ck text,

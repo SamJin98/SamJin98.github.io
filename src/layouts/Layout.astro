@@ -11,15 +11,15 @@ interface Props {
   description?: string
   /** List pages use the full container; article pages stay at reading width */
   wide?: boolean
-  /** The home page: the whole painting, one screen tall, no paper */
-  scene?: boolean
+  /** The home page shows the sun in the sky at the top */
+  sun?: boolean
 }
 
 const {
   title = 'Sam Jin',
   description = 'AI engineer at ByteDance working on LLM evaluation, coding agents, and RL training for code generation.',
   wide = false,
-  scene = false
+  sun = false
 } = Astro.props
 
 const canonical = new URL(Astro.url.pathname, Astro.site)
@@ -138,34 +138,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
       gtag('config', 'G-0M79FQ0DWJ')
     </script>
   </head>
-  <body class:list={['flex flex-col', scene ? 'scene' : 'page min-h-screen']}>
-    {
-      scene ? (
-        <div class="scene-paint" aria-hidden="true" />
-      ) : (
-        <>
-          <div class="page-sky" aria-hidden="true" />
-          <div class="page-ground" aria-hidden="true" />
-        </>
-      )
-    }
-    <div
-      class:list={[
-        'mx-auto w-full flex-1 flex flex-col px-6',
-        scene ? 'max-w-6xl' : 'max-w-4xl'
-      ]}
-    >
+  <body class="page min-h-screen flex flex-col">
+    <div class:list={['page-sky', sun && 'sun']} aria-hidden="true"></div>
+    <div class="page-ground" aria-hidden="true"></div>
+    <div class="mx-auto w-full max-w-4xl flex-1 flex flex-col px-6">
       <Header pathname={Astro.url.pathname} />
       <main
-        class:list={[
-          'flex-1',
-          !scene && 'pb-16',
-          !wide && !scene && 'mx-auto w-full max-w-2xl'
-        ]}
+        class:list={['flex-1 pb-16', !wide && 'mx-auto w-full max-w-2xl']}
       >
         <slot />
       </main>
-      {!scene && <Footer />}
+      <Footer />
     </div>
     <Meadow />
   </body>
