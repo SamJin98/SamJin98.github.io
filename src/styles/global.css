@@ -10,6 +10,7 @@
   --faint-foreground: oklch(0.66 0.012 95);
   --border: oklch(0.903 0.012 95);
   --accent: oklch(0.52 0.1 52);
+  --sky: #f1d3ac;
 }
 
 .dark {
@@ -20,6 +21,7 @@
   --faint-foreground: oklch(0.5 0 0);
   --border: oklch(1 0 0 / 12%);
   --accent: oklch(0.74 0.085 65);
+  --sky: #231d30;
 }
 
 @theme inline {
@@ -45,24 +47,41 @@
     scroll-behavior: smooth;
   }
 
+  /* The whole page is one painting: sky with a sun at the top, more sky
+     repeated down the page, hills and a meadow at the foot. Content sits on
+     sheets of paper (.paper) laid over it. The pictures come from
+     scripts/paint-landscape.cjs. */
   body {
-    background-color: var(--background);
+    position: relative;
+    padding-bottom: calc(max(100vw, 56rem) * 0.34);
+    background-color: var(--sky);
+    background-image:
+      url('/paint/sky-top-light.webp'), url('/paint/ground-light.webp'),
+      url('/paint/sky-tile-light.webp');
+    background-position:
+      top center,
+      bottom center,
+      top center;
+    background-size: max(100%, 56rem) auto;
+    background-repeat: no-repeat, no-repeat, repeat-y;
     color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
-  /* Canvas grain over the whole page, so flat colour reads as a painted
-     ground. Fixed, so it does not scroll with the content. */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    pointer-events: none;
-    opacity: 0.5;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.38  0 0 0 0 0.28  0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  .dark body {
+    background-image:
+      url('/paint/sky-top-dark.webp'), url('/paint/ground-dark.webp'),
+      url('/paint/sky-tile-dark.webp');
+  }
+
+  .paper {
+    background-color: var(--background);
+    border-radius: 6px;
+    box-shadow:
+      0 1px 2px oklch(0 0 0 / 12%),
+      0 12px 32px -12px oklch(0 0 0 / 28%);
   }
 
   ::selection {

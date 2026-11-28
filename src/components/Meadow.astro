@@ -1,5 +1,5 @@
 ---
-// Grass and flowers over the painted meadow in the home page's picture. The
+// Grass and flowers over the painted meadow at the foot of every page. The
 // blades sway in a slow wind and lean away from the pointer. With reduced
 // motion they are painted once and left still.
 ---
@@ -7,13 +7,13 @@
 <canvas class="meadow" aria-hidden="true"></canvas>
 
 <style>
+  /* Lies over the painted meadow at the foot of the page */
   .meadow {
     position: absolute;
-    left: 1.2%;
-    right: 1.2%;
-    bottom: 2.6%;
-    width: 97.6%;
-    height: 36%;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: calc(max(100vw, 56rem) * 0.19);
     pointer-events: none;
   }
 </style>

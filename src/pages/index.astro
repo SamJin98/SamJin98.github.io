@@ -2,7 +2,6 @@
 import Layout from '@/layouts/Layout.astro'
 import SectionHeading from '@/components/SectionHeading.astro'
 import TrainingCurve from '@/components/TrainingCurve.astro'
-import Meadow from '@/components/Meadow.astro'
 import { getCollection } from 'astro:content'
 import { personalInfo, timeline, education, sideProjects } from '@/lib/data'
 
@@ -25,13 +24,12 @@ const link = 'text-accent hover:underline underline-offset-4'
 ---
 
 <Layout wide>
-  <section class="hero">
-    <Meadow />
-    <div class="relative px-6 pt-7 sm:px-10 sm:pt-9">
+  <section>
+    <div>
       <h1 class="font-serif font-medium text-4xl sm:text-[2.75rem] leading-[1.1] tracking-tight">
         {personalInfo.name}
       </h1>
-      <p class="strip mt-4 max-w-[27em] text-[1.0625rem] leading-relaxed sm:text-lg">
+      <p class="mt-4 max-w-[34em] text-lg leading-relaxed">
         AI engineer at <b class="font-semibold">ByteDance</b>. I build the
         benchmark, the coding agent, and the RL training that help language
         models write code for{' '}<a
@@ -41,7 +39,7 @@ const link = 'text-accent hover:underline underline-offset-4'
           class={link}>Lynx</a
         >.
       </p>
-      <p class="strip mt-2.5 text-[0.8125rem] font-mono text-muted-foreground">
+      <p class="mt-4 text-[0.8125rem] font-mono text-faint">
         {personalInfo.location.replace(', California', '')}{' · '}<a
           href={personalInfo.github}
           target="_blank"
@@ -172,34 +170,6 @@ const link = 'text-accent hover:underline underline-offset-4'
 </Layout>
 
 <style>
-  /* The intro sits inside a painted loss landscape: sky and hills behind the
-     text, a meadow along the bottom, and a descent path on the right hill. */
-  .hero {
-    position: relative;
-    aspect-ratio: 4 / 5;
-    background: url('/landscape-light.webp') 72% bottom / cover no-repeat;
-  }
-
-  :global(.dark) .hero {
-    background-image: url('/landscape-dark.webp');
-  }
-
-  @media (min-width: 40rem) {
-    .hero {
-      aspect-ratio: 2 / 1;
-      background-size: 100% 100%;
-    }
-  }
-
-  /* Text on the painting sits on a strip of the page's own paper */
-  .strip {
-    width: fit-content;
-    padding: 0.35rem 0.7rem;
-    margin-left: -0.7rem;
-    background-color: var(--background);
-    border-radius: 3px;
-  }
-
   .job.on {
     background-color: var(--muted);
   }

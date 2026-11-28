@@ -4,6 +4,7 @@ import '../styles/mdx.css'
 import 'temml/dist/Temml-Local.css'
 import Header from '@/components/Header.astro'
 import Footer from '@/components/Footer.astro'
+import Meadow from '@/components/Meadow.astro'
 
 interface Props {
   title?: string
@@ -135,14 +136,19 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
     </script>
   </head>
   <body class="min-h-screen flex flex-col">
-    <div class="mx-auto w-full max-w-4xl flex-1 flex flex-col px-6">
-      <Header pathname={Astro.url.pathname} />
-      <main
-        class:list={['flex-1 pb-16', !wide && 'mx-auto w-full max-w-2xl']}
-      >
-        <slot />
-      </main>
-      <Footer />
+    <div class="mx-auto w-full max-w-4xl flex-1 flex flex-col px-3 pt-3 sm:px-6 sm:pt-6">
+      <div class="paper px-5 sm:px-10">
+        <Header pathname={Astro.url.pathname} />
+      </div>
+      <div class="paper mt-16 flex-1 flex flex-col px-5 pt-10 sm:mt-24 sm:px-10 sm:pt-12">
+        <main
+          class:list={['flex-1 pb-16', !wide && 'mx-auto w-full max-w-2xl']}
+        >
+          <slot />
+        </main>
+        <Footer />
+      </div>
     </div>
+    <Meadow />
   </body>
 </html>
