@@ -1,10 +1,13 @@
 ---
-// The meadow at the foot of every page, painted the way a field is dabbed in
-// oils: rows of short leaf-shaped touches laid over each other from the back
-// to the front, yellower at the far edge and deeper green near the viewer,
-// with soft smears of flowers standing among them. It sways in a slow wind
-// and leans away from the pointer. With reduced motion it is painted once
-// and left still.
+// The meadow at the foot of every page, painted in two steps on the GPU.
+// First the field itself is drawn: a few thousand touches of grass and
+// flowers, each bent into an arc by the wind, by gusts crossing the field,
+// by the pointer and by the animals that wander through now and then.
+// Then the whole picture is worked over like thick oil paint: colours are
+// pulled into flat dabs, and the dabs are lit from the upper left so their
+// edges and bristle furrows catch the light.
+// With reduced motion it is painted once and left still, with no animals.
+// Without WebGL 2 the canvas stays empty and the painted ground shows.
 ---
 
 <canvas class="meadow" aria-hidden="true"></canvas>
@@ -22,49 +25,386 @@
 </style>
 
 <script>
-  interface Dab {
-    x: number
-    y: number
-    height: number
-    width: number
-    colour: string
-    phase: number
-    push: number
-    speed: number
-    flower: boolean
-  }
-
   type RGB = [number, number, number]
+
+  interface Animal {
+    kind: number // which cell of the sprite sheet
+    x: number
+    y: number // where its feet stand
+    size: number // height on screen
+    direction: 1 | -1
+    born: number
+    life: number
+    pace: number
+    phase: number
+  }
 
   const palettes = {
     light: {
-      ground: '#4f6230',
-      far: [142, 152, 74] as RGB,
-      near: [70, 92, 42] as RGB,
-      flowers: ['#7a6cc4', '#9a90d0', '#c0577f', '#d6a233', '#e4e0ea', '#e9b23c']
+      groundFar: [122, 136, 62] as RGB,
+      groundNear: [58, 78, 36] as RGB,
+      far: [150, 160, 76] as RGB,
+      near: [66, 94, 44] as RGB,
+      // Odd touches mixed into the greens: straw, lime, a cool blue-green
+      accents: [[204, 186, 92], [176, 194, 88], [74, 110, 70], [220, 206, 128]] as RGB[],
+      flowers: [
+        [122, 108, 196],
+        [154, 144, 208],
+        [192, 87, 127],
+        [214, 162, 51],
+        [232, 228, 236],
+        [233, 178, 60],
+        [207, 74, 58]
+      ] as RGB[],
+      relief: 1,
+      shine: 0.36
     },
     dark: {
-      ground: '#1f2716',
-      far: [62, 72, 40] as RGB,
-      near: [28, 37, 20] as RGB,
-      flowers: ['#544b8f', '#6c649c', '#84415f', '#93722d', '#8a8896', '#9a7a30']
+      groundFar: [50, 60, 34] as RGB,
+      groundNear: [22, 31, 17] as RGB,
+      far: [66, 78, 42] as RGB,
+      near: [26, 38, 22] as RGB,
+      accents: [[92, 88, 46], [76, 92, 48], [24, 50, 46], [100, 96, 64]] as RGB[],
+      flowers: [
+        [84, 75, 143],
+        [108, 100, 156],
+        [132, 65, 95],
+        [147, 114, 45],
+        [138, 136, 150],
+        [154, 122, 48],
+        [138, 58, 48]
+      ] as RGB[],
+      relief: 0.8,
+      shine: 0.22
     }
   }
 
-  const canvas = document.querySelector<HTMLCanvasElement>('canvas.meadow')
-  const ctx = canvas?.getContext('2d')
+  // Shared by every shader that needs to know where the field starts
+  const TOP = /* glsl */ `
+    float top(float x) {
+      return uSize.y * (0.36 + 0.035 * sin(x * 0.011) + 0.02 * sin(x * 0.037 + 2.0));
+    }`
 
-  if (canvas && ctx) {
+  const NOISE = /* glsl */ `
+    float hash(vec2 p) {
+      p = fract(p * vec2(123.34, 456.21));
+      p += dot(p, p + 45.32);
+      return fract(p.x * p.y);
+    }
+    float noise(vec2 p) {
+      vec2 i = floor(p), f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x),
+                 mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+    }`
+
+  const QUAD_VS = /* glsl */ `#version 300 es
+    layout(location = 0) in vec2 aCorner;
+    out vec2 vUv;
+    void main() {
+      vUv = aCorner * 0.5 + 0.5;
+      gl_Position = vec4(aCorner, 0.0, 1.0);
+    }`
+
+  // The earth under the grass, so nothing shows between the touches
+  const GROUND_FS = /* glsl */ `#version 300 es
+    precision highp float;
+    uniform vec2 uSize;
+    uniform vec3 uGroundFar, uGroundNear;
+    in vec2 vUv;
+    out vec4 outColor;
+    ${TOP}
+    ${NOISE}
+    void main() {
+      vec2 p = vec2(vUv.x, 1.0 - vUv.y) * uSize;
+      float edge = top(p.x) + 5.0;
+      if (p.y < edge) discard;
+      float depth = (p.y - edge) / (uSize.y - edge);
+      vec3 c = mix(uGroundFar, uGroundNear, depth) * (0.9 + 0.2 * noise(p * 0.06));
+      outColor = vec4(c, 1.0);
+    }`
+
+  // One touch of grass or one flower smear, bent into an arc
+  const BLADE_VS = /* glsl */ `#version 300 es
+    precision highp float;
+    layout(location = 0) in vec2 aBlade; // side -1..1, along 0..1
+    layout(location = 1) in vec4 aRoot;  // x, depth, two seeds
+    layout(location = 2) in vec4 aKind;  // flower, seed, height, width
+    uniform vec2 uSize;
+    uniform float uTime, uMotion;
+    uniform vec3 uPointer;   // x, y, strength
+    uniform vec4 uMobs[4];   // x, y, reach, strength
+    uniform vec3 uFar, uNear;
+    uniform vec3 uAccents[4];
+    uniform vec3 uFlowers[7];
+    out vec3 vColour;
+    ${TOP}
+    float rnd(float s, float k) { return fract(sin(s * k) * 43758.5453); }
+    void main() {
+      float x = aRoot.x, depth = aRoot.y, flower = aKind.x, seed = aKind.y;
+      float size = 0.7 + depth * 0.8;
+      float edge = top(x);
+      float y = edge + (uSize.y - edge) * depth * 1.04 + (aRoot.z - 0.2) * 7.0 * size;
+      float h = aKind.z * size, w = aKind.w * size;
+
+      // Wind: a steady lean, a wave rolling across the field, gusts that
+      // travel through it, and each touch's own flutter
+      float gust = pow(max(0.0, sin(uTime * 0.33 - x * 0.0035)), 3.0);
+      float wind = 0.1
+        + sin(uTime * 1.1 + x * 0.012 + y * 0.03) * 0.2
+        + gust * 0.42
+        + sin(uTime * 2.6 + aRoot.w * 6.283) * (0.05 + gust * 0.09);
+
+      // The pointer and the animals push nearby touches aside
+      vec2 away = vec2(x, y - h * 0.5) - uPointer.xy;
+      float push = sign(away.x) * pow(max(0.0, 1.0 - length(away) / 90.0), 2.0) * 1.2 * uPointer.z;
+      for (int i = 0; i < 4; i++) {
+        vec2 from = vec2(x, y) - uMobs[i].xy;
+        push += sign(from.x) * pow(max(0.0, 1.0 - length(from * vec2(1.0, 2.2)) / max(uMobs[i].z, 1.0)), 2.0)
+          * 0.9 * uMobs[i].w;
+      }
+
+      float lean = (aRoot.w - 0.5) * mix(0.8, 0.3, flower);
+      float bend = lean + wind * uMotion * mix(1.0, 0.8, flower) + push;
+      float s = aBlade.y;
+      float arc = bend * s;
+      vec2 spine = vec2(x, y) + vec2(sin(arc), -cos(arc)) * h * s;
+      vec2 across = vec2(cos(arc), sin(arc));
+      // Grass is round at the foot and drawn up to a point; a flower is a
+      // spindle, pointed at both ends
+      float leaf = pow(1.0 - s, 0.7) * (0.55 + 0.45 * smoothstep(0.0, 0.2, s));
+      float spindle = pow(sin(3.14159 * clamp(s, 0.0, 1.0)), 0.8);
+      vec2 p = spine + across * aBlade.x * w * 0.5 * mix(leaf, spindle, flower);
+
+      float mixed = clamp(depth + (rnd(seed, 127.1) - 0.5) * 0.5, 0.0, 1.0);
+      vec3 green = mix(uFar, uNear, mixed) * mix(0.8, 1.18, rnd(seed, 311.7));
+      if (rnd(seed, 74.7) < 0.14 * (1.2 - depth)) green = uAccents[int(rnd(seed, 19.3) * 3.99)];
+      // Darker at the foot, lighter toward the tip and on the lit side
+      green *= mix(0.7, 1.14, s) * (1.0 - aBlade.x * 0.1);
+      vec3 petal = uFlowers[int(rnd(seed, 53.9) * 6.99)] * mix(0.86, 1.08, s);
+      vColour = mix(green, petal, flower) / 255.0;
+
+      // Nearer touches cover farther ones; flowers go in a little late
+      float order = (y + flower * h * 0.55) / uSize.y;
+      gl_Position = vec4(p.x / uSize.x * 2.0 - 1.0, 1.0 - p.y / uSize.y * 2.0, 0.9 - order * 0.9, 1.0);
+    }`
+
+  const BLADE_FS = /* glsl */ `#version 300 es
+    precision highp float;
+    in vec3 vColour;
+    out vec4 outColor;
+    void main() { outColor = vec4(vColour, 1.0); }`
+
+  // A sheep or a cow, one cell of the sprite sheet
+  const MOB_VS = /* glsl */ `#version 300 es
+    precision highp float;
+    layout(location = 0) in vec2 aCorner;
+    uniform vec2 uSize;
+    uniform vec4 uRect;  // centre x, feet y, width, height
+    uniform vec3 uCell;  // cell, cells, direction
+    out vec2 vUv;
+    void main() {
+      vec2 uv = aCorner * 0.5 + 0.5;
+      float u = uCell.z > 0.0 ? uv.x : 1.0 - uv.x;
+      vUv = vec2((uCell.x + u) / uCell.y, 1.0 - uv.y);
+      vec2 p = vec2(uRect.x + aCorner.x * uRect.z * 0.5, uRect.y - uv.y * uRect.w);
+      float order = (uRect.y + 10.0) / uSize.y;
+      gl_Position = vec4(p.x / uSize.x * 2.0 - 1.0, 1.0 - p.y / uSize.y * 2.0, 0.9 - order * 0.9, 1.0);
+    }`
+
+  const MOB_FS = /* glsl */ `#version 300 es
+    precision highp float;
+    uniform sampler2D uSheet;
+    uniform float uAlpha;
+    in vec2 vUv;
+    out vec4 outColor;
+    void main() {
+      vec4 c = texture(uSheet, vUv);
+      float a = c.a * uAlpha;
+      if (a < 0.02) discard;
+      outColor = vec4(c.rgb * a, a);
+    }`
+
+  // Pulls the picture into flat dabs: around every point, the calmest of
+  // four neighbouring patches gives its average colour
+  const DAB_FS = /* glsl */ `#version 300 es
+    precision highp float;
+    uniform sampler2D uScene;
+    uniform vec2 uStep;
+    in vec2 vUv;
+    out vec4 outColor;
+    void main() {
+      vec4 sum[4];
+      vec4 squares[4];
+      for (int k = 0; k < 4; k++) { sum[k] = vec4(0.0); squares[k] = vec4(0.0); }
+      for (int j = -3; j <= 3; j++) {
+        for (int i = -3; i <= 3; i++) {
+          vec4 c = texture(uScene, vUv + vec2(float(i), float(j)) * uStep);
+          vec4 cc = c * c;
+          if (i <= 0 && j <= 0) { sum[0] += c; squares[0] += cc; }
+          if (i >= 0 && j <= 0) { sum[1] += c; squares[1] += cc; }
+          if (i <= 0 && j >= 0) { sum[2] += c; squares[2] += cc; }
+          if (i >= 0 && j >= 0) { sum[3] += c; squares[3] += cc; }
+        }
+      }
+      float calmest = 1e9;
+      vec4 chosen = vec4(0.0);
+      for (int k = 0; k < 4; k++) {
+        vec4 mean = sum[k] / 16.0;
+        vec4 spread = abs(squares[k] / 16.0 - mean * mean);
+        float v = spread.r + spread.g + spread.b + spread.a;
+        if (v < calmest) { calmest = v; chosen = mean; }
+      }
+      outColor = chosen;
+    }`
+
+  // Lights the dabs as thick paint: where one colour meets the next there
+  // is a ridge, and the bristles leave furrows running up the strokes
+  const RELIEF_FS = /* glsl */ `#version 300 es
+    precision highp float;
+    uniform sampler2D uPaint;
+    uniform vec2 uStep, uSize;
+    uniform float uRelief, uShine;
+    in vec2 vUv;
+    out vec4 outColor;
+    ${NOISE}
+    float height(vec2 uv) {
+      vec4 c = texture(uPaint, uv);
+      vec2 p = vec2(uv.x, 1.0 - uv.y) * uSize;
+      float furrows = noise(vec2(p.x * 0.85, p.y * 0.13)) * 0.5 + noise(vec2(p.x * 0.3, p.y * 0.07)) * 0.5;
+      return dot(c.rgb, vec3(0.9, 1.4, 0.7)) + c.a * (0.6 + furrows * 0.55);
+    }
+    void main() {
+      vec4 c = texture(uPaint, vUv);
+      float dx = height(vUv + vec2(uStep.x, 0.0)) - height(vUv - vec2(uStep.x, 0.0));
+      float dy = height(vUv - vec2(0.0, uStep.y)) - height(vUv + vec2(0.0, uStep.y));
+      // Light from the upper left
+      float shade = clamp((dx * 0.62 + dy * 0.78) * 2.0 * uRelief, -1.0, 1.0);
+      vec3 lit = c.rgb * (1.0 + shade * 0.5) + c.a * uShine * pow(max(shade, 0.0), 2.0) * vec3(1.0, 0.97, 0.86);
+      outColor = vec4(lit, c.a);
+    }`
+
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas.meadow')
+  const gl = canvas?.getContext('webgl2', { antialias: false, depth: false })
+
+  if (canvas && gl) {
     const root = document.documentElement
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches
-    let palette = palettes.light
-    let dabs: Dab[] = []
+    const theme = () => (root.classList.contains('dark') ? 'dark' : 'light')
     let width = 0
     let height = 0
-    let pointerX = -1e4
-    let pointerY = -1e4
+    let count = 0
     let visible = false
     let frame = 0
+    let last = 0
+    const pointer = { x: -1e4, y: -1e4, strength: 0, near: false, targetX: -1e4, targetY: -1e4 }
+
+    const program = (vertex: string, fragment: string) => {
+      const made = gl.createProgram()!
+      for (const [type, source] of [
+        [gl.VERTEX_SHADER, vertex],
+        [gl.FRAGMENT_SHADER, fragment]
+      ] as const) {
+        const shader = gl.createShader(type)!
+        gl.shaderSource(shader, source)
+        gl.compileShader(shader)
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
+          console.warn('meadow shader', gl.getShaderInfoLog(shader))
+        gl.attachShader(made, shader)
+      }
+      gl.linkProgram(made)
+      const uniforms: Record<string, WebGLUniformLocation | null> = {}
+      const n = gl.getProgramParameter(made, gl.ACTIVE_UNIFORMS)
+      for (let i = 0; i < n; i++) {
+        const name = gl.getActiveUniform(made, i)!.name.replace('[0]', '')
+        uniforms[name] = gl.getUniformLocation(made, name)
+      }
+      return { made, uniforms }
+    }
+
+    const ground = program(QUAD_VS, GROUND_FS)
+    const blades = program(BLADE_VS, BLADE_FS)
+    const mobs = program(MOB_VS, MOB_FS)
+    const dab = program(QUAD_VS, DAB_FS)
+    const relief = program(QUAD_VS, RELIEF_FS)
+
+    // A square for the full-picture passes and the animals
+    const quad = gl.createVertexArray()
+    gl.bindVertexArray(quad)
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
+    gl.enableVertexAttribArray(0)
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
+
+    // One touch: a ribbon of five steps, drawn once per root
+    const SEGMENTS = 5
+    const ribbon: number[] = []
+    for (let k = 0; k <= SEGMENTS; k++) ribbon.push(-1, k / SEGMENTS, 1, k / SEGMENTS)
+    const field = gl.createVertexArray()
+    gl.bindVertexArray(field)
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ribbon), gl.STATIC_DRAW)
+    gl.enableVertexAttribArray(0)
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
+    const roots = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, roots)
+    for (const [location, offset] of [
+      [1, 0],
+      [2, 16]
+    ]) {
+      gl.enableVertexAttribArray(location)
+      gl.vertexAttribPointer(location, 4, gl.FLOAT, false, 32, offset)
+      gl.vertexAttribDivisor(location, 1)
+    }
+    gl.bindVertexArray(null)
+
+    // Two pictures to paint into: the field, then the field in dabs
+    const target = (depth: boolean) => ({
+      texture: gl.createTexture(),
+      buffer: gl.createFramebuffer(),
+      store: depth ? gl.createRenderbuffer() : null
+    })
+    const scene = target(true)
+    const dabbed = target(false)
+    const size = (t: ReturnType<typeof target>, w: number, h: number) => {
+      gl.bindTexture(gl.TEXTURE_2D, t.texture)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+      for (const [key, value] of [
+        [gl.TEXTURE_MIN_FILTER, gl.LINEAR],
+        [gl.TEXTURE_MAG_FILTER, gl.LINEAR],
+        [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE],
+        [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]
+      ])
+        gl.texParameteri(gl.TEXTURE_2D, key, value)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, t.buffer)
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t.texture, 0)
+      if (t.store) {
+        gl.bindRenderbuffer(gl.RENDERBUFFER, t.store)
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h)
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, t.store)
+      }
+    }
+
+    // The animals: two cells of one sprite sheet per theme, facing right
+    const cell = { width: 320, height: 220, count: 2 }
+    const sheets = Object.fromEntries(
+      (['light', 'dark'] as const).map(name => {
+        const sheet = { texture: gl.createTexture(), ready: false }
+        const image = new Image()
+        image.onload = () => {
+          gl.bindTexture(gl.TEXTURE_2D, sheet.texture)
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+          sheet.ready = true
+        }
+        if (!still) image.src = `/paint/animals-${name}.webp`
+        return [name, sheet]
+      })
+    )
+    let animals: Animal[] = []
+    let nextAnimal = performance.now() / 1000 + 3
 
     // Seeded, so the field looks the same on every visit
     let seed = 7
@@ -74,147 +414,191 @@
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296
     }
-    const pick = <T,>(list: T[]) => list[Math.floor(random() * list.length)]
 
-    // Where the field starts, as a gently uneven line
     const top = (x: number) =>
       height * (0.36 + 0.035 * Math.sin(x * 0.011) + 0.02 * Math.sin(x * 0.037 + 2))
 
     const plant = () => {
-      palette = palettes[root.classList.contains('dark') ? 'dark' : 'light']
       seed = 7
-      dabs = []
+      const data: number[] = []
 
-      // Rows of leaf-shaped touches from the far edge to the near one. Each
-      // row overlaps the one behind it; touches grow and deepen in colour
-      // toward the viewer, and every one is mixed a little differently.
-      const rows = Math.max(8, Math.round(height / 9))
+      // Rows of touches from the far edge to the near one, growing toward
+      // the viewer
+      const rows = Math.max(8, Math.round(height / 7))
       for (let row = 0; row < rows; row++) {
         const depth = row / (rows - 1)
-        const size = 0.7 + depth * 0.8
-        const gap = 5.2 * size
-        for (let x = -gap + random() * gap; x < width + gap; x += gap * (0.7 + random() * 0.6)) {
-          const y = top(x) + (height - top(x)) * depth * 1.04 + (random() - 0.2) * 7 * size
-          const mix = Math.min(1, Math.max(0, depth + (random() - 0.5) * 0.45))
-          const tone = 0.88 + random() * 0.26
-          const warm = random() < 0.12 ? 1.12 : 1
-          const c = palette.far.map((far, i) =>
-            Math.round(Math.min(255, (far + (palette.near[i] - far) * mix) * tone * (i === 2 ? 1 : warm)))
-          )
-          dabs.push({
-            x,
-            y,
-            height: (13 + random() * 13) * size,
-            width: (5 + random() * 4.5) * size,
-            colour: `rgb(${c[0]} ${c[1]} ${c[2]})`,
-            phase: random() * Math.PI * 2,
-            push: 0,
-            speed: 0,
-            flower: false
-          })
-        }
+        const gap = 4.6 * (0.7 + depth * 0.8)
+        for (let x = -gap + random() * gap; x < width + gap; x += gap * (0.7 + random() * 0.6))
+          data.push(x, depth, random(), random(), 0, random(), 15 + random() * 15, 8 + random() * 6)
       }
 
-      // Flowers: soft upright smears, a few to a clump, bigger lower down
-      for (let x = random() * 40; x < width; x += 30 + random() * 70) {
+      // Flowers: soft upright smears, a few to a clump
+      for (let x = random() * 40; x < width; x += 36 + random() * 80) {
         const depth = 0.2 + random() * 0.8
-        const baseY = top(x) + (height - top(x)) * depth
-        const colour = pick(palette.flowers)
-        const size = 0.6 + depth * 0.8
+        const colour = random()
         const n = 1 + Math.floor(random() * 3.4)
         for (let k = 0; k < n; k++)
-          dabs.push({
-            x: x + (random() - 0.5) * 28 * size,
-            y: baseY + (random() - 0.5) * 10,
-            height: (22 + random() * 22) * size,
-            width: (4.5 + random() * 4) * size,
-            colour: random() < 0.75 ? colour : pick(palette.flowers),
-            phase: random() * Math.PI * 2,
-            push: 0,
-            speed: 0,
-            flower: true
-          })
+          data.push(
+            x + (random() - 0.5) * 28 * (0.6 + depth * 0.8),
+            depth,
+            random(),
+            random(),
+            1,
+            random() < 0.75 ? colour : random(),
+            13 + random() * 13,
+            5 + random() * 3.5
+          )
       }
 
-      // Painted back to front, so nearer touches cover the feet of farther
-      // ones. Flowers go in a little late, which keeps their heads clear.
-      const order = (dab: Dab) => dab.y + (dab.flower ? dab.height * 0.55 : 0)
-      dabs.sort((a, b) => order(a) - order(b))
+      count = data.length / 8
+      gl.bindBuffer(gl.ARRAY_BUFFER, roots)
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW)
     }
 
-    const resize = () => {
-      const box = canvas.getBoundingClientRect()
-      // Drawn a little under screen resolution, which keeps the paint soft
-      const ratio = Math.min(devicePixelRatio || 1, 2) * 0.6
-      width = box.width
-      height = box.height
-      canvas.width = Math.round(width * ratio)
-      canvas.height = Math.round(height * ratio)
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
-      plant()
-      paint(performance.now())
+    // Now and then one wanders in, ambles a little way with pauses to
+    // graze, and fades out again
+    const herd = (t: number, dt: number) => {
+      animals = animals.filter(animal => t - animal.born < animal.life)
+      for (const animal of animals) {
+        const stride = Math.max(0, Math.sin((t - animal.born) * 0.45 + animal.phase))
+        animal.x += animal.direction * animal.pace * stride * dt
+      }
+      if (still || t < nextAnimal || animals.length >= 2) return
+      nextAnimal = t + 9 + Math.random() * 16
+      const depth = 0.12 + Math.random() * 0.42
+      const x = width * (0.06 + Math.random() * 0.88)
+      const kind = Math.random() < 0.6 ? 0 : 1
+      animals.push({
+        kind,
+        x,
+        y: top(x) + (height - top(x)) * depth,
+        size: height * (kind ? 0.62 : 0.5) * (0.8 + depth * 0.5),
+        direction: Math.random() < 0.5 ? 1 : -1,
+        born: t,
+        life: 16 + Math.random() * 12,
+        pace: 7 + Math.random() * 6,
+        phase: Math.random() * 6
+      })
     }
 
     const paint = (now: number) => {
       const t = now / 1000
-      ctx.clearRect(0, 0, width, height)
+      const dt = Math.min(0.1, last ? t - last : 0)
+      last = t
+      const palette = palettes[theme()]
+      herd(t, dt)
+      const fade = (animal: Animal) =>
+        Math.max(0, Math.min(1, (t - animal.born) / 2.5, (animal.life - (t - animal.born)) / 2.5))
 
-      // Ground colour under the touches, so no paper shows between them
-      ctx.fillStyle = palette.ground
-      ctx.beginPath()
-      ctx.moveTo(0, height)
-      for (let x = 0; x <= width + 8; x += 8) ctx.lineTo(x, top(x) + 4)
-      ctx.lineTo(width, height)
-      ctx.fill()
+      // The pointer's push follows it with a little lag
+      pointer.x += (pointer.targetX - pointer.x) * 0.25
+      pointer.y += (pointer.targetY - pointer.y) * 0.25
+      pointer.strength += ((pointer.near ? 1 : 0) - pointer.strength) * 0.12
 
-      for (const dab of dabs) {
-        // Wind: one slow wave across the field plus each touch's own flutter
-        const wind = still
-          ? 0
-          : Math.sin(t * 0.7 + dab.x * 0.012 + dab.y * 0.03) * 2.2 +
-            Math.sin(t * 1.9 + dab.phase) * 0.7
+      // 1. The field
+      gl.bindFramebuffer(gl.FRAMEBUFFER, scene.buffer)
+      gl.viewport(0, 0, canvas.width, canvas.height)
+      gl.clearColor(0, 0, 0, 0)
+      gl.depthMask(true)
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+      gl.disable(gl.BLEND)
 
-        // The pointer pushes nearby touches aside; a spring brings them back
-        const dx = dab.x - pointerX
-        const dy = dab.y - dab.height / 2 - pointerY
-        const distance = Math.hypot(dx, dy)
-        const reach = 80
-        const target =
-          distance < reach ? Math.sign(dx || 1) * (1 - distance / reach) ** 2 * 20 : 0
-        dab.speed += (target - dab.push) * 0.1
-        dab.speed *= 0.78
-        dab.push += dab.speed
+      gl.disable(gl.DEPTH_TEST)
+      gl.useProgram(ground.made)
+      gl.uniform2f(ground.uniforms.uSize, width, height)
+      gl.uniform3fv(ground.uniforms.uGroundFar, palette.groundFar.map(v => v / 255))
+      gl.uniform3fv(ground.uniforms.uGroundNear, palette.groundNear.map(v => v / 255))
+      gl.bindVertexArray(quad)
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
-        const bend = (wind + dab.push) * (dab.flower ? 1.2 : dab.height / 22)
-        const half = dab.width / 2
-        const tipX = dab.x + bend
-        const tipY = dab.y - dab.height
+      gl.enable(gl.DEPTH_TEST)
+      gl.depthFunc(gl.LEQUAL)
+      gl.useProgram(blades.made)
+      gl.uniform2f(blades.uniforms.uSize, width, height)
+      gl.uniform1f(blades.uniforms.uTime, t)
+      gl.uniform1f(blades.uniforms.uMotion, still ? 0 : 1)
+      gl.uniform3f(blades.uniforms.uPointer, pointer.x, pointer.y, pointer.strength)
+      const pushes = new Float32Array(16)
+      animals
+        .slice(0, 4)
+        .forEach((animal, i) => pushes.set([animal.x, animal.y, animal.size * 0.9, fade(animal)], i * 4))
+      gl.uniform4fv(blades.uniforms.uMobs, pushes)
+      gl.uniform3fv(blades.uniforms.uFar, palette.far)
+      gl.uniform3fv(blades.uniforms.uNear, palette.near)
+      gl.uniform3fv(blades.uniforms.uAccents, palette.accents.flat())
+      gl.uniform3fv(blades.uniforms.uFlowers, palette.flowers.flat())
+      gl.bindVertexArray(field)
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, (SEGMENTS + 1) * 2, count)
 
-        if (dab.flower) {
-          ctx.save()
-          ctx.translate(dab.x + bend * 0.5, dab.y - dab.height / 2)
-          ctx.rotate(Math.atan2(bend, dab.height))
-          ctx.globalAlpha = 0.82
-          ctx.fillStyle = dab.colour
-          // A spindle: pointed at both ends, widest below the middle
-          ctx.beginPath()
-          ctx.moveTo(0, -dab.height / 2)
-          ctx.quadraticCurveTo(dab.width, dab.height * 0.12, 0, dab.height / 2)
-          ctx.quadraticCurveTo(-dab.width, dab.height * 0.12, 0, -dab.height / 2)
-          ctx.fill()
-          ctx.restore()
-          continue
+      // The animals stand in the grass: touches in front of their feet
+      // were drawn nearer and cover them
+      const sheet = sheets[theme()]
+      if (sheet.ready && animals.length) {
+        gl.enable(gl.BLEND)
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+        gl.depthMask(false)
+        gl.useProgram(mobs.made)
+        gl.uniform2f(mobs.uniforms.uSize, width, height)
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, sheet.texture)
+        gl.uniform1i(mobs.uniforms.uSheet, 0)
+        gl.bindVertexArray(quad)
+        for (const animal of animals) {
+          const age = t - animal.born
+          const stride = Math.max(0, Math.sin(age * 0.45 + animal.phase))
+          const bob = Math.sin(age * 5 + animal.phase) * stride * 0.8
+          gl.uniform4f(
+            mobs.uniforms.uRect,
+            animal.x,
+            animal.y + bob,
+            (animal.size * cell.width) / cell.height,
+            animal.size
+          )
+          gl.uniform3f(mobs.uniforms.uCell, animal.kind, cell.count, animal.direction)
+          gl.uniform1f(mobs.uniforms.uAlpha, fade(animal))
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
         }
-
-        // A leaf-shaped touch: round at the foot, drawn up to a point
-        ctx.fillStyle = dab.colour
-        ctx.beginPath()
-        ctx.moveTo(dab.x - half, dab.y)
-        ctx.quadraticCurveTo(dab.x - half * 1.1 + bend * 0.4, dab.y - dab.height * 0.55, tipX, tipY)
-        ctx.quadraticCurveTo(dab.x + half * 1.1 + bend * 0.4, dab.y - dab.height * 0.55, dab.x + half, dab.y)
-        ctx.quadraticCurveTo(dab.x, dab.y + half, dab.x - half, dab.y)
-        ctx.fill()
+        gl.depthMask(true)
+        gl.disable(gl.BLEND)
       }
+
+      // 2. Into dabs
+      gl.disable(gl.DEPTH_TEST)
+      gl.bindVertexArray(quad)
+      gl.activeTexture(gl.TEXTURE0)
+      const reach = canvas.width / width
+      gl.bindFramebuffer(gl.FRAMEBUFFER, dabbed.buffer)
+      gl.useProgram(dab.made)
+      gl.bindTexture(gl.TEXTURE_2D, scene.texture)
+      gl.uniform1i(dab.uniforms.uScene, 0)
+      gl.uniform2f(dab.uniforms.uStep, (reach * 0.9) / canvas.width, (reach * 0.9) / canvas.height)
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+      // 3. Lit as thick paint, onto the page
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.useProgram(relief.made)
+      gl.bindTexture(gl.TEXTURE_2D, dabbed.texture)
+      gl.uniform1i(relief.uniforms.uPaint, 0)
+      gl.uniform2f(relief.uniforms.uStep, reach / canvas.width, reach / canvas.height)
+      gl.uniform2f(relief.uniforms.uSize, width, height)
+      gl.uniform1f(relief.uniforms.uRelief, palette.relief)
+      gl.uniform1f(relief.uniforms.uShine, palette.shine)
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+    }
+
+    const resize = () => {
+      const box = canvas.getBoundingClientRect()
+      const ratio = Math.min(devicePixelRatio || 1, 2)
+      width = box.width
+      height = box.height
+      canvas.width = Math.max(1, Math.round(width * ratio))
+      canvas.height = Math.max(1, Math.round(height * ratio))
+      size(scene, canvas.width, canvas.height)
+      size(dabbed, canvas.width, canvas.height)
+      animals = []
+      plant()
+      paint(performance.now())
     }
 
     const loop = (now: number) => {
@@ -229,20 +613,25 @@
     // Only animate while the field is on screen
     new IntersectionObserver(entries => {
       visible = entries[0].isIntersecting
+      last = 0
       start()
     }).observe(canvas)
 
     addEventListener('pointermove', event => {
       const box = canvas.getBoundingClientRect()
-      pointerX = event.clientX - box.left
-      pointerY = event.clientY - box.top
+      pointer.targetX = event.clientX - box.left
+      pointer.targetY = event.clientY - box.top
+      pointer.near = pointer.targetY > -90
+      if (pointer.strength < 0.01) {
+        pointer.x = pointer.targetX
+        pointer.y = pointer.targetY
+      }
     })
-    document.addEventListener('pointerleave', () => (pointerX = pointerY = -1e4))
+    document.addEventListener('pointerleave', () => (pointer.near = false))
     addEventListener('resize', resize)
 
     // Repaint in the other palette when the theme changes
     new MutationObserver(() => {
-      plant()
       if (!frame) paint(performance.now())
     }).observe(root, { attributes: true, attributeFilter: ['class'] })
 
