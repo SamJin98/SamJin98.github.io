@@ -132,9 +132,9 @@ def baked(a, amp, colour):
 def main():
     rng = np.random.default_rng(SEED)
     shade = relief(impasto_height(rng, n=SIZE, count=760))
-    baked(shade, 0.52, LIGHT).save(OUT / "paper-light.webp", quality=94, method=6)
+    baked(shade, 0.26, LIGHT).save(OUT / "paper-light.webp", quality=94, method=6)
     night = np.where(shade > 0, shade * 0.5, shade * 1.25)
-    baked(night, 0.24, DARK).save(OUT / "paper-dark.webp", quality=94, method=6)
+    baked(night, 0.17, DARK).save(OUT / "paper-dark.webp", quality=94, method=6)
 
 
 if __name__ == "__main__":
