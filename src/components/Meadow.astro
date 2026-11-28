@@ -95,11 +95,11 @@
       })
 
       // Ragged top edge: short blunt tips standing just above the mass
-      for (let x = -6; x < width + 6; x += 3.5 + random() * 5)
+      for (let x = -6; x < width + 6; x += 2.2 + random() * 3.2)
         tips.push(make(x, top(x) + 3, height * (0.06 + random() * random() * 0.24), 5 + random() * 7, pick(palette.tips)))
 
       // The body: broad, faint strokes, lighter and darker than the ground
-      const count = Math.round((width * height) / 620)
+      const count = Math.round((width * height) / 260)
       for (let i = 0; i < count; i++) {
         const x = random() * width
         const y = top(x) + random() * (height - top(x)) + height * 0.06
@@ -107,12 +107,12 @@
       }
 
       // Flowers: soft upright smears, a few to a clump, bigger lower down
-      for (let x = random() * 40; x < width; x += 46 + random() * 110) {
+      for (let x = random() * 40; x < width; x += 24 + random() * 60) {
         const depth = 0.3 + random() * 0.7
         const baseY = top(x) + (height - top(x)) * depth
         const colour = pick(palette.flowers)
         const size = 0.55 + depth * 0.75
-        const n = 1 + Math.floor(random() * 3.6)
+        const n = 2 + Math.floor(random() * 3.4)
         for (let k = 0; k < n; k++)
           flowers.push(
             make(
