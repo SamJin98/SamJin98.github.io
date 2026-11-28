@@ -63,7 +63,7 @@
   /* Type and spacing grow with the window, so large screens are not left
      with a small page in the middle */
   html {
-    font-size: clamp(16px, min(1.2vw, 2vh), 20px);
+    font-size: clamp(14px, min(1.1vw, 1.72vh), 17px);
   }
 
   :root {

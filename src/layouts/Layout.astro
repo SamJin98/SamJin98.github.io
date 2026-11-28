@@ -146,7 +146,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
       <main
         class:list={[
           'flex-1',
-          home ? 'pb-0' : 'pb-10',
+          home ? 'flex flex-col pb-2' : 'pb-10',
           !wide && 'mx-auto w-full max-w-2xl'
         ]}
       >
