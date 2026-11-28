@@ -3,7 +3,8 @@
 
 One square tile of overlapping brush strokes, drawn on a torus so it repeats
 without a seam, shaded from the upper left and baked into the page colour.
-The colours are --background in src/styles/global.css, light and dark.
+The colours are the ones in --paper-wash in src/styles/global.css, light
+and dark; change them together.
 Drawn from a fixed seed. Needs numpy and Pillow.
 
   python3 scripts/paint-paper.py
@@ -16,7 +17,7 @@ from PIL import Image
 OUT = Path(__file__).resolve().parent.parent / "public" / "paint"
 SEED = 20261128
 SIZE = 960
-LIGHT, DARK = "#f3f0e7", "#131211"
+LIGHT, DARK = "#f5f3ec", "#100f0f"
 
 def smooth1d(a, n):
     """Box-blur a periodic 1-D array n times."""
@@ -132,9 +133,9 @@ def baked(a, amp, colour):
 def main():
     rng = np.random.default_rng(SEED)
     shade = relief(impasto_height(rng, n=SIZE, count=760))
-    baked(shade, 0.26, LIGHT).save(OUT / "paper-light.webp", quality=94, method=6)
+    baked(shade, 0.34, LIGHT).save(OUT / "paper-light.webp", quality=94, method=6)
     night = np.where(shade > 0, shade * 0.5, shade * 1.25)
-    baked(night, 0.17, DARK).save(OUT / "paper-dark.webp", quality=94, method=6)
+    baked(night, 0.2, DARK).save(OUT / "paper-dark.webp", quality=94, method=6)
 
 
 if __name__ == "__main__":

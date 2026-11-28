@@ -73,7 +73,7 @@
     --ground: url('/paint/ground-light.webp');
     --paper: url('/paint/paper-light.webp');
     --clouds: url('/paint/clouds-light.webp');
-    --paper-wash: color-mix(in oklab, var(--background) 0%, transparent);
+    --paper-wash: color-mix(in oklab, #f5f3ec 90%, transparent);
     --sky-strength: 0%;
   }
 
@@ -83,18 +83,24 @@
     --ground: url('/paint/ground-dark.webp');
     --paper: url('/paint/paper-dark.webp');
     --clouds: url('/paint/clouds-dark.webp');
-    --paper-wash: color-mix(in oklab, var(--background) 0%, transparent);
+    --paper-wash: color-mix(in oklab, #100f0f 90%, transparent);
     --sky-strength: 70%;
   }
 
   /* The page is thickly painted paper, with sky coming in from the top and
      hills and grass at the foot */
   .page {
-    /* The paper's own colour is washed back over the texture, so the
-       strokes stay faint enough to read on. The paper is one square tile
-       of brush strokes, repeated. */
+    /* The paper is one square tile of brush strokes, repeated. Behind the
+       centre column the page colour is laid back over it, so the strokes
+       show in the margins and the text sits on almost flat paper. */
     background:
-      linear-gradient(var(--paper-wash), var(--paper-wash)),
+      linear-gradient(
+        to right,
+        transparent calc(50% - 46rem),
+        var(--paper-wash) calc(50% - 35rem),
+        var(--paper-wash) calc(50% + 35rem),
+        transparent calc(50% + 46rem)
+      ),
       var(--paper) top center / 44rem auto repeat;
     --meadow-height: calc(var(--paint-width) * 0.085);
     padding-bottom: calc(var(--paint-width) * 0.068);
