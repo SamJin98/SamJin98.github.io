@@ -135,7 +135,7 @@ export const timeline = [
     years: '2019',
     title: 'Software Engineer Intern',
     place: 'IBM',
-    line: 'Digital twin prototype for Watson in React and Go.'
+    line: 'Digital twin prototype for Watson in React and Go, plus market analysis for the Watson product line.'
   },
   {
     key: 'ucas',
@@ -144,7 +144,7 @@ export const timeline = [
     years: '2018 – 20',
     title: 'Research Assistant',
     place: 'Chinese Academy of Sciences',
-    line: 'Software security: fuzzing and symbolic execution.'
+    line: 'Software security: finding vulnerabilities with fuzzing and symbolic execution, and improving AFL fuzzing strategies.'
   }
 ]
 

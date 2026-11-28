@@ -203,6 +203,12 @@ const link = 'text-accent hover:underline underline-offset-4'
   }
 
   @media (min-width: 64rem) {
+    /* Every job line takes two lines, so the list does not shift when the
+       highlight moves */
+    .desc {
+      min-height: calc(2 * 1.375 * 0.8125rem);
+    }
+
     .post {
       overflow: hidden;
       text-overflow: ellipsis;
