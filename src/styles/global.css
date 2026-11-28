@@ -225,36 +225,23 @@
     cursor: pointer;
     --near: 0;
     --halo: oklch(0.9 0.14 90);
-    transition: scale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+    /* The halo is a shadow, so it adds nothing to the page's width */
+    box-shadow:
+      0 0 calc(var(--paint-width) * 0.05) 0
+        color-mix(in oklab, var(--halo) calc(var(--near) * 62%), transparent),
+      inset 0 0 calc(var(--paint-width) * 0.02) 0
+        color-mix(in oklab, var(--halo) calc(var(--near) * 34%), transparent);
+    transition:
+      scale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+      box-shadow 0.4s;
   }
 
   .dark .page-sun {
     --halo: oklch(0.88 0.05 250);
   }
 
-  .page-sun::before {
-    content: '';
-    position: absolute;
-    inset: -70%;
-    border-radius: 50%;
-    background: radial-gradient(
-      closest-side,
-      transparent 36%,
-      color-mix(in oklab, var(--halo) 60%, transparent) 44%,
-      color-mix(in oklab, var(--halo) 22%, transparent) 66%,
-      transparent
-    );
-    opacity: calc(var(--near) * 0.75);
-    scale: calc(0.8 + var(--near) * 0.25);
-    pointer-events: none;
-    transition:
-      opacity 0.4s,
-      scale 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-
-  .page-sun:hover::before {
-    opacity: 1;
-    scale: 1.15;
+  .page-sun:hover {
+    --near: 1.35;
   }
 
   .page-sun:active {
