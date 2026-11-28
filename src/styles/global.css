@@ -73,7 +73,7 @@
     --ground: url('/paint/ground-light.webp');
     --paper: url('/paint/paper-light.webp');
     --clouds: url('/paint/clouds-light.webp');
-    --paper-wash: color-mix(in oklab, var(--background) 50%, transparent);
+    --paper-wash: color-mix(in oklab, var(--background) 0%, transparent);
     --sky-strength: 0%;
   }
 
@@ -83,7 +83,7 @@
     --ground: url('/paint/ground-dark.webp');
     --paper: url('/paint/paper-dark.webp');
     --clouds: url('/paint/clouds-dark.webp');
-    --paper-wash: color-mix(in oklab, var(--background) 30%, transparent);
+    --paper-wash: color-mix(in oklab, var(--background) 0%, transparent);
     --sky-strength: 70%;
   }
 
@@ -91,10 +91,11 @@
      hills and grass at the foot */
   .page {
     /* The paper's own colour is washed back over the texture, so the
-       strokes stay faint enough to read on */
+       strokes stay faint enough to read on. The paper is one square tile
+       of brush strokes, repeated. */
     background:
       linear-gradient(var(--paper-wash), var(--paper-wash)),
-      var(--paper) top center / var(--paint-width) auto repeat-y;
+      var(--paper) top center / 44rem auto repeat;
     --meadow-height: calc(var(--paint-width) * 0.085);
     padding-bottom: calc(var(--paint-width) * 0.068);
   }
@@ -123,7 +124,7 @@
      corner and stays at full strength while the sky around it fades */
   @media (min-width: 80rem) {
     .page-sky {
-      height: 17rem;
+      height: max(17rem, calc(var(--paint-width) * 0.16));
       background-position: top center;
       background-size: var(--paint-width) auto;
       mask-image:
