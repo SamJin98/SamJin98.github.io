@@ -34,8 +34,8 @@ const themes = {
     relief: 0.42,
     jitter: 0.08,
     paper: '#f3f0e7',
-    paperRelief: 0.1,
-    paperJitter: 0.012
+    paperRelief: 0.05,
+    paperJitter: 0.008
   },
   dark: {
     skyTop: '#141426',
@@ -49,7 +49,7 @@ const themes = {
     relief: 0.6,
     jitter: 0.1,
     paper: '#131211',
-    paperRelief: 0.5,
+    paperRelief: 0.34,
     paperJitter: 0.03
   }
 }
