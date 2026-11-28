@@ -11,7 +11,7 @@ interface Props {
   description?: string
   /** List pages use the full container; article pages stay at reading width */
   wide?: boolean
-  /** The home page: sun in the sky, no footer, so it fits one screen */
+  /** The home page: no footer, so it fits one screen */
   home?: boolean
 }
 
@@ -139,7 +139,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
     </script>
   </head>
   <body class="page min-h-screen flex flex-col">
-    <div class:list={['page-sky', home && 'sun']} aria-hidden="true"></div>
+    <div class="page-sky" aria-hidden="true"></div>
     <div class="page-ground" aria-hidden="true"></div>
     <div class="mx-auto w-full max-w-5xl flex-1 flex flex-col px-6">
       <Header pathname={Astro.url.pathname} />

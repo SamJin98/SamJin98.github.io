@@ -104,21 +104,24 @@
     pointer-events: none;
   }
 
+  /* A pale sky at the top of every page, strongest at the very top and
+     nearly gone where the text starts. On small screens the picture is
+     drawn larger and shifted, which puts the sun out of view. */
   .page-sky {
     top: 0;
-    height: 13rem;
-    background: var(--sky-tile) top center / var(--paint-width) auto;
-    /* Strongest at the very top, nearly gone where the text starts */
+    height: 15rem;
+    background: var(--sky-top) 30% top / calc(var(--paint-width) * 1.6) auto
+      no-repeat;
     mask-image: linear-gradient(to bottom, #000, rgb(0 0 0 / 35%) 45%, transparent);
   }
 
-  /* The home page's sky is taller and has the sun in it */
+  /* Wide screens: the sun (a moon in the dark theme) sits in the top right
+     corner and stays at full strength while the sky around it fades */
   @media (min-width: 80rem) {
-    .page-sky.sun {
+    .page-sky {
       height: 17rem;
-      background-image: var(--sky-top), var(--sky-tile);
-      background-repeat: no-repeat, repeat-y;
-      /* Keep the sun at full strength while the sky around it fades */
+      background-position: top center;
+      background-size: var(--paint-width) auto;
       mask-image:
         radial-gradient(
           circle at 95% calc(var(--paint-width) * 0.068),
