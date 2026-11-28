@@ -4,6 +4,7 @@ import '../styles/mdx.css'
 import 'temml/dist/Temml-Local.css'
 import Header from '@/components/Header.astro'
 import Footer from '@/components/Footer.astro'
+import Meadow from '@/components/Meadow.astro'
 
 interface Props {
   title?: string
@@ -144,5 +145,6 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
       </main>
       <Footer />
     </div>
+    <Meadow />
   </body>
 </html>
