@@ -100,10 +100,12 @@
   }
 
   /* The home page's sky is taller and has the sun in it */
-  .page-sky.sun {
-    height: 17rem;
-    background-image: var(--sky-top), var(--sky-tile);
-    background-repeat: no-repeat, repeat-y;
+  @media (min-width: 48rem) {
+    .page-sky.sun {
+      height: 17rem;
+      background-image: var(--sky-top), var(--sky-tile);
+      background-repeat: no-repeat, repeat-y;
+    }
   }
 
   .page-ground {
