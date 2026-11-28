@@ -2,7 +2,8 @@
 // The meadow at the foot of every page, painted in two steps on the GPU.
 // First the field itself is drawn: a few thousand touches of grass and
 // flowers, each bent into an arc by the wind, by gusts crossing the field,
-// by the pointer and by the animals that wander through now and then.
+// and by the animals that wander through now and then. The pointer combs
+// the grass the way it moves, and the trail it leaves springs back slowly.
 // Then the whole picture is worked over like thick oil paint: colours are
 // pulled into flat dabs, and the dabs are lit from the upper left so their
 // edges and bristle furrows catch the light.
@@ -124,6 +125,31 @@
       outColor = vec4(c, 1.0);
     }`
 
+  // The trail the pointer leaves: how far the grass is combed left or
+  // right at each spot. It fades a little every frame, and the pointer
+  // adds to it along its path, in the direction it is moving.
+  const TRAIL_FS = /* glsl */ `#version 300 es
+    precision highp float;
+    uniform sampler2D uTrail;
+    uniform vec2 uSize;
+    uniform vec4 uStroke;  // from x, y, to x, y
+    uniform vec2 uComb;    // direction -1..1, strength
+    in vec2 vUv;
+    out vec4 outColor;
+    void main() {
+      float lean = texture(uTrail, vUv).r * 2.0 - 1.0;
+      lean *= 0.965;
+      lean -= sign(lean) * min(abs(lean), 0.004);
+      vec2 p = vec2(vUv.x, 1.0 - vUv.y) * uSize;
+      vec2 a = uStroke.xy, b = uStroke.zw;
+      vec2 ab = b - a;
+      float along = clamp(dot(p - a, ab) / max(dot(ab, ab), 1e-4), 0.0, 1.0);
+      float d = length((p - (a + ab * along)) * vec2(1.0, 1.25));
+      float touch = exp(-d * d / (46.0 * 46.0)) * uComb.y;
+      lean = mix(lean, uComb.x, clamp(touch, 0.0, 1.0));
+      outColor = vec4(lean * 0.5 + 0.5, 0.0, 0.0, 1.0);
+    }`
+
   // One touch of grass or one flower smear, bent into an arc
   const BLADE_VS = /* glsl */ `#version 300 es
     precision highp float;
@@ -132,7 +158,7 @@
     layout(location = 2) in vec4 aKind;  // flower, seed, height, width
     uniform vec2 uSize;
     uniform float uTime, uMotion;
-    uniform vec3 uPointer;   // x, y, strength
+    uniform sampler2D uTrail;
     uniform vec4 uMobs[4];   // x, y, reach, strength
     uniform vec3 uFar, uNear;
     uniform vec3 uAccents[4];
@@ -155,9 +181,9 @@
         + gust * 0.42
         + sin(uTime * 2.6 + aRoot.w * 6.283) * (0.05 + gust * 0.09);
 
-      // The pointer and the animals push nearby touches aside
-      vec2 away = vec2(x, y - h * 0.5) - uPointer.xy;
-      float push = sign(away.x) * pow(max(0.0, 1.0 - length(away) / 90.0), 2.0) * 1.2 * uPointer.z;
+      // The pointer's trail combs the touches over; animals push them aside
+      float combed = texture(uTrail, vec2(x / uSize.x, 1.0 - (y - h * 0.4) / uSize.y)).r * 2.0 - 1.0;
+      float push = combed * 1.5;
       for (int i = 0; i < 4; i++) {
         vec2 from = vec2(x, y) - uMobs[i].xy;
         push += sign(from.x) * pow(max(0.0, 1.0 - length(from * vec2(1.0, 2.2)) / max(uMobs[i].z, 1.0)), 2.0)
@@ -165,7 +191,9 @@
       }
 
       float lean = (aRoot.w - 0.5) * mix(0.8, 0.3, flower);
-      float bend = lean + wind * uMotion * mix(1.0, 0.8, flower) + push;
+      // Combed grass lies flatter and moves less in the wind
+      float bend = lean * (1.0 - abs(combed) * 0.7)
+        + wind * uMotion * mix(1.0, 0.8, flower) * (1.0 - abs(combed) * 0.6) + push;
       float s = aBlade.y;
       float arc = bend * s;
       vec2 spine = vec2(x, y) + vec2(sin(arc), -cos(arc)) * h * s;
@@ -181,6 +209,8 @@
       if (rnd(seed, 74.7) < 0.14 * (1.2 - depth)) green = uAccents[int(rnd(seed, 19.3) * 3.99)];
       // Darker at the foot, lighter toward the tip and on the lit side
       green *= mix(0.7, 1.14, s) * (1.0 - aBlade.x * 0.1);
+      // Combed over, a touch shows more of its lit side
+      green *= 1.0 + abs(combed) * 0.22;
       vec3 petal = uFlowers[int(rnd(seed, 53.9) * 6.99)] * mix(0.86, 1.08, s);
       vColour = mix(green, petal, flower) / 255.0;
 
@@ -297,7 +327,7 @@
     let visible = false
     let frame = 0
     let last = 0
-    const pointer = { x: -1e4, y: -1e4, strength: 0, near: false, targetX: -1e4, targetY: -1e4 }
+    const pointer = { x: -1e4, y: -1e4, fromX: -1e4, fromY: -1e4, targetX: -1e4, targetY: -1e4, comb: 0 }
 
     const program = (vertex: string, fragment: string) => {
       const made = gl.createProgram()!
@@ -325,6 +355,7 @@
     const ground = program(QUAD_VS, GROUND_FS)
     const blades = program(BLADE_VS, BLADE_FS)
     const mobs = program(MOB_VS, MOB_FS)
+    const trailer = program(QUAD_VS, TRAIL_FS)
     const dab = program(QUAD_VS, DAB_FS)
     const relief = program(QUAD_VS, RELIEF_FS)
 
@@ -366,6 +397,9 @@
     })
     const scene = target(true)
     const dabbed = target(false)
+    // The pointer's trail, kept small and swapped between two pictures
+    let trail = [target(false), target(false)]
+    const trailSize = { width: 1, height: 1 }
     const size = (t: ReturnType<typeof target>, w: number, h: number) => {
       gl.bindTexture(gl.TEXTURE_2D, t.texture)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
@@ -490,10 +524,29 @@
       const fade = (animal: Animal) =>
         Math.max(0, Math.min(1, (t - animal.born) / 2.5, (animal.life - (t - animal.born)) / 2.5))
 
-      // The pointer's push follows it with a little lag
-      pointer.x += (pointer.targetX - pointer.x) * 0.25
-      pointer.y += (pointer.targetY - pointer.y) * 0.25
-      pointer.strength += ((pointer.near ? 1 : 0) - pointer.strength) * 0.12
+      // The trail: fade what is there, then comb along the pointer's path
+      pointer.fromX = pointer.x
+      pointer.fromY = pointer.y
+      pointer.x += (pointer.targetX - pointer.x) * 0.35
+      pointer.y += (pointer.targetY - pointer.y) * 0.35
+      const moved = pointer.x - pointer.fromX
+      const speed = Math.hypot(moved, pointer.y - pointer.fromY)
+      const jumped = speed > 400
+      pointer.comb += (Math.max(-1, Math.min(1, moved / 9)) - pointer.comb) * 0.3
+      gl.disable(gl.DEPTH_TEST)
+      gl.disable(gl.BLEND)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, trail[1].buffer)
+      gl.viewport(0, 0, trailSize.width, trailSize.height)
+      gl.useProgram(trailer.made)
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, trail[0].texture)
+      gl.uniform1i(trailer.uniforms.uTrail, 0)
+      gl.uniform2f(trailer.uniforms.uSize, width, height)
+      gl.uniform4f(trailer.uniforms.uStroke, pointer.fromX, pointer.fromY, pointer.x, pointer.y)
+      gl.uniform2f(trailer.uniforms.uComb, pointer.comb, jumped || still ? 0 : Math.min(1, speed / 5) * 0.7)
+      gl.bindVertexArray(quad)
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+      trail = [trail[1], trail[0]]
 
       // 1. The field
       gl.bindFramebuffer(gl.FRAMEBUFFER, scene.buffer)
@@ -517,7 +570,9 @@
       gl.uniform2f(blades.uniforms.uSize, width, height)
       gl.uniform1f(blades.uniforms.uTime, t)
       gl.uniform1f(blades.uniforms.uMotion, still ? 0 : 1)
-      gl.uniform3f(blades.uniforms.uPointer, pointer.x, pointer.y, pointer.strength)
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, trail[0].texture)
+      gl.uniform1i(blades.uniforms.uTrail, 0)
       const pushes = new Float32Array(16)
       animals
         .slice(0, 4)
@@ -596,6 +651,13 @@
       canvas.height = Math.max(1, Math.round(height * ratio))
       size(scene, canvas.width, canvas.height)
       size(dabbed, canvas.width, canvas.height)
+      trailSize.width = Math.max(1, Math.ceil(width / 5))
+      trailSize.height = Math.max(1, Math.ceil(height / 5))
+      for (const t of trail) {
+        size(t, trailSize.width, trailSize.height)
+        gl.clearColor(0.5, 0, 0, 1)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+      }
       animals = []
       plant()
       paint(performance.now())
@@ -621,13 +683,12 @@
       const box = canvas.getBoundingClientRect()
       pointer.targetX = event.clientX - box.left
       pointer.targetY = event.clientY - box.top
-      pointer.near = pointer.targetY > -90
-      if (pointer.strength < 0.01) {
+      // Coming in from outside, start the stroke where the pointer is
+      if (pointer.x < -5e3 || Math.abs(pointer.targetY - pointer.y) > 300) {
         pointer.x = pointer.targetX
         pointer.y = pointer.targetY
       }
     })
-    document.addEventListener('pointerleave', () => (pointer.near = false))
     addEventListener('resize', resize)
 
     // Repaint in the other palette when the theme changes
