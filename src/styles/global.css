@@ -137,7 +137,9 @@
   .page-ground {
     bottom: 0;
     height: calc(var(--paint-width) * 0.115);
-    background: var(--ground) bottom center / var(--paint-width) auto no-repeat;
+    /* Set a little low, so its painted meadow ends where the grass begins */
+    background: var(--ground) center bottom calc(var(--paint-width) * -0.045) /
+      var(--paint-width) auto no-repeat;
     mask-image: linear-gradient(to bottom, transparent, #000 45%);
   }
 
