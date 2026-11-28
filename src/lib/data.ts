@@ -189,7 +189,7 @@ export const sideProjects: ProjectItem[] = [
     title: 'Second Look',
     meta: '2026 · live demo',
     line: 'A second opinion on your photos. Suggests color fixes and crops from fixed rules, entirely in the browser, with no model.',
-    href: 'https://second-look-blue-beta.vercel.app'
+    href: 'https://secondlook.samjin98.dev'
   },
   {
     title: 'AI4EDU study assistant',
