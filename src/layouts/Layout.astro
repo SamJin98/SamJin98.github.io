@@ -140,6 +140,12 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
   </head>
   <body class="page min-h-screen flex flex-col">
     <div class="page-sky" aria-hidden="true"></div>
+    <div class="page-clouds" aria-hidden="true">
+      <div class="cloud"></div>
+      <div class="cloud"></div>
+      <div class="cloud"></div>
+      <div class="cloud"></div>
+    </div>
     <div class="page-ground" aria-hidden="true"></div>
     <div class="mx-auto w-full max-w-5xl flex-1 flex flex-col px-6">
       <Header pathname={Astro.url.pathname} />

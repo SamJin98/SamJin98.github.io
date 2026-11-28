@@ -72,6 +72,7 @@
     --sky-tile: url('/paint/sky-tile-light.webp');
     --ground: url('/paint/ground-light.webp');
     --paper: url('/paint/paper-light.webp');
+    --clouds: url('/paint/clouds-light.webp');
     --paper-wash: color-mix(in oklab, var(--background) 50%, transparent);
     --sky-strength: 0%;
   }
@@ -81,6 +82,7 @@
     --sky-tile: url('/paint/sky-tile-dark.webp');
     --ground: url('/paint/ground-dark.webp');
     --paper: url('/paint/paper-dark.webp');
+    --clouds: url('/paint/clouds-dark.webp');
     --paper-wash: color-mix(in oklab, var(--background) 30%, transparent);
     --sky-strength: 70%;
   }
@@ -93,8 +95,8 @@
     background:
       linear-gradient(var(--paper-wash), var(--paper-wash)),
       var(--paper) top center / var(--paint-width) auto repeat-y;
-    --meadow-height: calc(var(--paint-width) * 0.07);
-    padding-bottom: calc(var(--paint-width) * 0.074);
+    --meadow-height: calc(var(--paint-width) * 0.085);
+    padding-bottom: calc(var(--paint-width) * 0.068);
   }
 
   .page-sky,
@@ -134,11 +136,88 @@
     }
   }
 
+  /* A few clouds in the margins beside the text, wide screens only. Each
+     is one of three sprites in the clouds picture. They drift very slowly. */
+  .page-clouds {
+    display: none;
+    position: absolute;
+    inset: 0 0 auto;
+    height: 46rem;
+    max-height: 100%;
+    overflow: hidden;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .cloud {
+    position: absolute;
+    aspect-ratio: 600 / 420;
+    background: var(--clouds) 0 0 / 300% 100% no-repeat;
+    animation: drift 70s ease-in-out infinite alternate;
+  }
+
+  .cloud:nth-child(1) {
+    top: 4rem;
+    left: calc(50% - 32rem - 19rem);
+    width: 19rem;
+  }
+
+  .cloud:nth-child(2) {
+    top: 6.5rem;
+    left: calc(50% + 32rem + 2rem);
+    width: 15rem;
+    background-position-x: 100%;
+    animation-duration: 90s;
+    animation-direction: alternate-reverse;
+  }
+
+  .cloud:nth-child(3) {
+    top: 19rem;
+    left: calc(50% + 32rem + 3.5rem);
+    width: 17rem;
+    background-position-x: 50%;
+    animation-duration: 110s;
+  }
+
+  .cloud:nth-child(4) {
+    top: 27rem;
+    left: calc(50% - 32rem - 15.5rem);
+    width: 13rem;
+    background-position-x: 100%;
+    animation-duration: 100s;
+    animation-direction: alternate-reverse;
+  }
+
+  .dark .cloud {
+    opacity: 0.7;
+  }
+
+  @keyframes drift {
+    from {
+      transform: translateX(-1.25rem);
+    }
+    to {
+      transform: translateX(1.25rem);
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .page-clouds {
+      display: block;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cloud {
+      animation: none;
+    }
+  }
+
   .page-ground {
     bottom: 0;
-    height: calc(var(--paint-width) * 0.115);
+    height: calc(var(--paint-width) * 0.094);
     /* Set a little low, so its painted meadow ends where the grass begins */
-    background: var(--ground) center bottom calc(var(--paint-width) * -0.045) /
+    background: var(--ground) center bottom calc(var(--paint-width) * -0.062) /
       var(--paint-width) auto no-repeat;
     mask-image: linear-gradient(to bottom, transparent, #000 45%);
   }

@@ -1,6 +1,6 @@
 ---
 // The meadow at the foot of every page, painted loosely: one dark mass of
-// grass made of thin strokes, with a ragged top edge and soft smears of
+// grass in broad strokes, with a ragged top edge and soft smears of
 // flowers. It sways in a slow wind and leans away from the pointer. With
 // reduced motion it is painted once and left still.
 ---
@@ -37,14 +37,14 @@
       top: '#5a6540',
       bottom: '#454f2e',
       tips: ['#56613c', '#5f6a42', '#4e5936'],
-      hairs: ['rgb(150 158 106 / 0.34)', 'rgb(52 60 36 / 0.4)', 'rgb(118 128 82 / 0.3)'],
+      hairs: ['rgb(134 144 94 / 0.22)', 'rgb(52 60 36 / 0.26)', 'rgb(108 118 74 / 0.2)'],
       flowers: ['#6f63b8', '#8d84c9', '#b4577f', '#c79a3a', '#b9b6c9', '#7f5aa6']
     },
     dark: {
       top: '#2a321e',
       bottom: '#1b2114',
       tips: ['#28301c', '#2e3721', '#232b19'],
-      hairs: ['rgb(96 106 68 / 0.3)', 'rgb(16 20 11 / 0.45)', 'rgb(70 80 50 / 0.28)'],
+      hairs: ['rgb(84 94 58 / 0.2)', 'rgb(16 20 11 / 0.3)', 'rgb(64 74 46 / 0.2)'],
       flowers: ['#4d4585', '#665f96', '#7d3f5c', '#8c6d2c', '#7f7d8c', '#59407a']
     }
   }
@@ -79,7 +79,7 @@
 
     // Where the mass of grass starts, as a gently uneven line
     const top = (x: number) =>
-      height * (0.2 + 0.035 * Math.sin(x * 0.011) + 0.02 * Math.sin(x * 0.037 + 2))
+      height * (0.38 + 0.035 * Math.sin(x * 0.011) + 0.02 * Math.sin(x * 0.037 + 2))
 
     const plant = () => {
       palette = palettes[root.classList.contains('dark') ? 'dark' : 'light']
@@ -95,19 +95,19 @@
       })
 
       // Ragged top edge: short blunt tips standing just above the mass
-      for (let x = -4; x < width + 4; x += 1.4 + random() * 2)
-        tips.push(make(x, top(x) + 3, height * (0.05 + random() * random() * 0.3), 1.6 + random() * 2.2, pick(palette.tips)))
+      for (let x = -6; x < width + 6; x += 3.5 + random() * 5)
+        tips.push(make(x, top(x) + 3, height * (0.06 + random() * random() * 0.24), 5 + random() * 7, pick(palette.tips)))
 
-      // The body: thin strokes, lighter and darker than the ground colour
-      const count = Math.round((width * height) / 150)
+      // The body: broad, faint strokes, lighter and darker than the ground
+      const count = Math.round((width * height) / 620)
       for (let i = 0; i < count; i++) {
         const x = random() * width
         const y = top(x) + random() * (height - top(x)) + height * 0.06
-        hairs.push(make(x, y, height * (0.1 + random() * 0.2), 0.8 + random() * 0.9, pick(palette.hairs)))
+        hairs.push(make(x, y, height * (0.16 + random() * 0.26), 3.5 + random() * 6, pick(palette.hairs)))
       }
 
       // Flowers: soft upright smears, a few to a clump, bigger lower down
-      for (let x = random() * 40; x < width; x += 34 + random() * 86) {
+      for (let x = random() * 40; x < width; x += 46 + random() * 110) {
         const depth = 0.3 + random() * 0.7
         const baseY = top(x) + (height - top(x)) * depth
         const colour = pick(palette.flowers)
@@ -119,7 +119,7 @@
               x + (random() - 0.5) * 26 * size,
               baseY + (random() - 0.5) * height * 0.12,
               height * (0.2 + random() * 0.24) * size,
-              (4 + random() * 3.6) * size,
+              (6 + random() * 5) * size,
               random() < 0.75 ? colour : pick(palette.flowers),
               true
             )
@@ -131,7 +131,7 @@
     const resize = () => {
       const box = canvas.getBoundingClientRect()
       // Drawn a little under screen resolution, which keeps the paint soft
-      const ratio = Math.min(devicePixelRatio || 1, 2) * 0.7
+      const ratio = Math.min(devicePixelRatio || 1, 2) * 0.55
       width = box.width
       height = box.height
       canvas.width = Math.round(width * ratio)
@@ -164,7 +164,7 @@
       ctx.clearRect(0, 0, width, height)
 
       // The mass of grass
-      const fill = ctx.createLinearGradient(0, height * 0.2, 0, height)
+      const fill = ctx.createLinearGradient(0, height * 0.38, 0, height)
       fill.addColorStop(0, palette.top)
       fill.addColorStop(1, palette.bottom)
       ctx.fillStyle = fill

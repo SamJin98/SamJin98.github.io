@@ -3,6 +3,7 @@
 //   sky-top   the top of the page: sky with a sun (a moon in the dark theme)
 //   sky-tile  more sky, seamless top to bottom, repeated down the page
 //   ground    the foot of the page: hills and a meadow
+//   clouds    three clouds side by side on a clear ground, cut out as sprites
 //   paper     the page itself: one flat colour laid on thickly, seamless top
 //             to bottom, so text stays readable over it
 //
@@ -19,7 +20,7 @@ const path = require('path')
 const fs = require('fs')
 
 const W = 1800
-const sizes = { 'sky-top': 720, 'sky-tile': 600, ground: 800, paper: 600 }
+const sizes = { 'sky-top': 720, 'sky-tile': 600, ground: 800, paper: 600, clouds: 420 }
 
 const themes = {
   light: {
@@ -27,6 +28,7 @@ const themes = {
     sky: '#f1d3ac',
     horizon: '#eeb28a',
     cloud: '#f9eedb',
+    puff: ['#f7e3cf', '#e8c4b3'],
     sun: '#f1b547',
     sunCore: '#f9d98a',
     hills: ['#b38d7c', '#c8934f', '#9d6a3a'],
@@ -42,6 +44,7 @@ const themes = {
     sky: '#231d30',
     horizon: '#6a3f38',
     cloud: '#3b2f44',
+    puff: ['#453c5e', '#2d2742'],
     sun: '#ecd6a4',
     sunCore: '#fbf0cf',
     hills: ['#2c2433', '#402d27', '#573b25'],
@@ -77,7 +80,7 @@ const SUN = [W * 0.95, H * 0.17, 70];
 // 1. Flat picture to sample colours from
 const src = document.createElement('canvas'); src.width = W; src.height = H; const s = src.getContext('2d');
 const grad = (y0, y1, a, b) => { const q = s.createLinearGradient(0, y0, 0, y1); q.addColorStop(0, a); q.addColorStop(1, b); return q; };
-s.fillStyle = kind === 'sky-top' ? grad(0, H * 0.8, t.skyTop, t.sky) : kind === 'ground' ? grad(H * 0.2, H * 0.6, t.sky, t.horizon) : t.sky; s.fillRect(0, 0, W, H);
+s.fillStyle = kind === 'clouds' ? grad(H * 0.35, H * 0.72, t.puff[0], t.puff[1]) : kind === 'sky-top' ? grad(0, H * 0.8, t.skyTop, t.sky) : kind === 'ground' ? grad(H * 0.2, H * 0.6, t.sky, t.horizon) : t.sky; s.fillRect(0, 0, W, H);
 const clouds = kind === 'sky-top' ? [[0.3, 0.3, 250, 15], [0.52, 0.5, 200, 12], [0.12, 0.62, 170, 10], [0.7, 0.72, 210, 12]] : kind === 'sky-tile' ? [[0.22, 0.3, 210, 12], [0.76, 0.62, 230, 13]] : [];
 s.fillStyle = t.cloud; clouds.forEach(([x, y, rx, ry]) => { s.beginPath(); s.ellipse(x * W, y * H, rx, ry, 0, 0, 7); s.fill(); });
 if (kind === 'sky-top') { const sun = s.createRadialGradient(SUN[0] - 18, SUN[1] - 18, 6, SUN[0], SUN[1], SUN[2]); sun.addColorStop(0, t.sunCore); sun.addColorStop(1, t.sun); s.fillStyle = sun; s.beginPath(); s.arc(SUN[0], SUN[1], SUN[2], 0, 7); s.fill(); }
@@ -101,7 +104,7 @@ const stroke = (x, y, len, wid) => {
   let ang, curl = 0;
   if (z === 'meadow') { ang = -Math.PI / 2 + (rnd() - .5) * .35; len *= .55; wid *= .7; }
   else if (z === 'sun') { ang = Math.atan2(y - SUN[1], x - SUN[0]) + 1.57; curl = .5; len *= .6; }
-  else if (z === 'sky') { ang = (field(x, y, 210, 0) - .5) * 5.2; curl = (field(x, y, 120, 7) - .5) * 1.6; len *= 1.25; }
+  else if (z === 'sky') { ang = (field(x, y, 210, 0) - .5) * (kind === 'clouds' ? 1.5 : 5.2); curl = (field(x, y, 120, 7) - .5) * 1.6; len *= 1.25; }
   else { ang = slope(hills[z], x) * .9 + (noise(x / 100, y / 100) - .5) * .8; curl = (rnd() - .5) * .5; }
   const j = 1 + (rnd() - .5) * 2 * t.jitter + (field(x, y, 170, 9) - .5) * t.jitter * 2.6;
   const col = [0, 1, 2].map(n => Math.max(0, Math.min(255, px[k + n] * j)));
@@ -124,8 +127,17 @@ for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const k = (y * W + x) 
   const l = 1 + Math.max(-.5, Math.min(.5, e * 2.2)) * t.relief + (rnd() - .5) * (kind === 'paper' ? .012 : .035);
   d[k] = Math.min(255, d[k] * l); d[k + 1] = Math.min(255, d[k + 1] * l); d[k + 2] = Math.min(255, d[k + 2] * l); }
 
-// 4. Fade the edge that meets the tile, raggedly, like paint thinning out
-if (!wrap) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const from = kind === 'sky-top' ? H - 1 - y : y, n = noise(x / 90, y / 60) * 70;
+// 4. Clouds: keep only the paint inside three cloud shapes, each a few
+//    overlapping puffs with a ragged edge, one per 600px cell
+if (kind === 'clouds') { const shapes = [
+    [[-150, 250, 130, 60], [-40, 212, 150, 88], [90, 232, 140, 72], [190, 262, 100, 46], [0, 278, 262, 40]],
+    [[-90, 240, 110, 52], [20, 218, 120, 68], [120, 250, 100, 46], [10, 270, 200, 32]],
+    [[-70, 246, 120, 34], [60, 234, 112, 42], [0, 264, 184, 24]]];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const cell = Math.min(2, x / 600 | 0), cx = cell * 600 + 300; let v = -9;
+    for (const [ox, py, rx, ry] of shapes[cell]) v = Math.max(v, 1 - ((x - cx - ox) / rx) ** 2 - ((y - py) / ry) ** 2);
+    const a = Math.max(0, Math.min(1, (v + (noise(x / 34, y / 22) - .5) * .7) / .4)); d[(y * W + x) * 4 + 3] = 255 * a * a * (3 - 2 * a); } }
+// 5. Fade the edge that meets the tile, raggedly, like paint thinning out
+else if (!wrap) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const from = kind === 'sky-top' ? H - 1 - y : y, n = noise(x / 90, y / 60) * 70;
   const a = Math.max(0, Math.min(1, (from - 10 - n) / 130)); d[(y * W + x) * 4 + 3] = 255 * a * a * (3 - 2 * a); }
 c.putImageData(m, 0, 0);
 document.title = 'done';
