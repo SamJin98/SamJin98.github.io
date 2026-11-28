@@ -1,11 +1,16 @@
 ---
-// The experience list drawn as a training curve: a noisy raw line, a smoothed
-// line on top, and one labelled checkpoint per job. Rendered at build time;
-// the script on the home page only links hover between the list and the dots.
+// The experience list drawn as a training run with warm restarts: a noisy raw
+// line, a smoothed line on top, one labelled restart per job, and the
+// learning rate underneath. Rendered at build time; the script on the home
+// page links hover between the list and the dots and moves the cursor.
 interface Checkpoint {
   key: string
   label: string
+  /** Year the cycle starts */
   at: number
+  /** Loss right after the restart, and the level it settles towards */
+  peak: number
+  floor: number
 }
 
 interface Props {
@@ -17,36 +22,45 @@ const { checkpoints } = Astro.props
 const W = 520
 const H = 300
 const START = 2018
+const END = 2026.9
 const SPAN = 9
 const x = (year: number) => 34 + ((year - START) / SPAN) * 470
-const y = (loss: number) => 30 + (1 - (loss - 0.1) / 0.8) * 205
+const y = (loss: number) => 26 + (1 - (loss - 0.1) / 0.8) * 180
+// The learning rate gets its own thin strip under the loss plot
+const LR_TOP = 226
+const LR_BOTTOM = 252
+const yLr = (lr: number) => LR_BOTTOM - lr * (LR_BOTTOM - LR_TOP)
 
-// Hand-placed shape: steady descent, with a bump in 2023
-const control: [number, number][] = [
-  [2018, 0.8],
-  [2019, 0.72],
-  [2020, 0.65],
-  [2021, 0.58],
-  [2022, 0.5],
-  [2023.4, 0.46],
-  [2023.7, 0.64],
-  [2024.1, 0.55],
-  [2024.8, 0.42],
-  [2025.4, 0.33],
-  [2026.2, 0.25],
-  [2026.9, 0.2]
-]
+// A run with warm restarts: every change of direction resets the learning
+// rate, the loss climbs to `peak`, then settles towards a lower `floor`
+// than the cycle before.
+const RISE = 0.15
+const cycles = [...checkpoints]
+  .sort((a, b) => a.at - b.at)
+  .map((c, i, all) => ({
+    ...c,
+    end: all[i + 1]?.at ?? END + 1.2
+  }))
 
-const lossAt = (year: number) => {
-  for (let i = 1; i < control.length; i++) {
-    if (year <= control[i][0]) {
-      const [a, la] = control[i - 1]
-      const [b, lb] = control[i]
-      const t = (year - a) / (b - a)
-      return la + (lb - la) * t * t * (3 - 2 * t)
-    }
+const lossAt = (year: number): number => {
+  let i = cycles.findIndex(c => year < c.end)
+  if (i < 0) i = cycles.length - 1
+  const c = cycles[i]
+  const t = year - c.at
+  if (i > 0 && t < RISE) {
+    const before = lossAt(c.at - 1e-6)
+    const q = t / RISE
+    return before + (c.peak - before) * q * q * (3 - 2 * q)
   }
-  return control[control.length - 1][1]
+  const since = i > 0 ? t - RISE : Math.max(t, 0)
+  return c.floor + (c.peak - c.floor) * Math.exp(-since / 0.55)
+}
+
+// Cosine decay inside each cycle, back to full at every restart
+const lrAt = (year: number) => {
+  const c = cycles.find(c => year < c.end) ?? cycles[cycles.length - 1]
+  const q = Math.min(Math.max((year - c.at) / (c.end - c.at), 0), 1)
+  return 0.08 + 0.92 * 0.5 * (1 + Math.cos(Math.PI * q))
 }
 
 // Seeded noise so every build draws the same line
@@ -60,42 +74,60 @@ const random = () => {
 
 let raw = ''
 let smooth = ''
-const STEPS = 240
+let lr = ''
+// [x, y] samples of the smooth line, for the cursor on the home page
+const samples: number[][] = []
+const STEPS = 360
 for (let i = 0; i <= STEPS; i++) {
-  const year = START + (i / STEPS) * 8.9
+  const year = START + (i / STEPS) * (END - START)
   const loss = lossAt(year)
-  const noise = (random() - 0.5) * (0.04 + loss * 0.09)
-  raw += `${i ? 'L' : 'M'}${x(year).toFixed(1)} ${y(loss + noise).toFixed(1)}`
-  if (i % 3 === 0)
-    smooth += `${smooth ? 'L' : 'M'}${x(year).toFixed(1)} ${y(loss).toFixed(1)}`
+  // A higher learning rate makes for a noisier line
+  const noise = (random() - 0.5) * (0.025 + lrAt(year) * 0.07)
+  const px = x(year).toFixed(1)
+  const cmd = i ? 'L' : 'M'
+  raw += `${cmd}${px} ${y(loss + noise).toFixed(1)}`
+  smooth += `${cmd}${px} ${y(loss).toFixed(1)}`
+  lr += `${cmd}${px} ${yLr(lrAt(year)).toFixed(1)}`
+  if (i % 3 === 0) samples.push([+px, +y(loss).toFixed(1)])
 }
 
 const ticks = [2018, 2020, 2022, 2024, 2026]
 
-const dots = checkpoints.map((c, i) => {
-  const cx = x(c.at)
-  const cy = y(lossAt(c.at))
-  // Alternate label heights so neighbours don't collide
-  const up = i % 2 === 0 ? 26 : 44
-  return { ...c, cx, cy, up, tx: Math.max(cx, 54) }
+const dots = cycles.map((c, i) => {
+  const at = i > 0 ? c.at + RISE : c.at + 0.08
+  const cx = x(at)
+  const cy = y(lossAt(at))
+  return { ...c, cx, cy, up: 22, tx: Math.max(cx, 54) }
 })
+
+// Which cycle a year belongs to, as [start year, key], for the cursor
+const spans = cycles.map(c => [c.at, c.key])
 ---
 
 <svg
   class="curve block w-full h-auto"
   viewBox={`0 0 ${W} ${H}`}
   role="img"
-  aria-label="The experience list drawn as a line that falls from 2018 to 2026, with a bump in 2023"
+  aria-label="The experience list drawn as a line that falls from 2018 to 2026 and jumps up at each change of job"
+  data-samples={JSON.stringify(samples)}
+  data-spans={JSON.stringify(spans)}
+  data-x0={x(START)}
+  data-x1={x(END)}
+  data-start={START}
+  data-end={END}
 >
-  <path class="axis" d="M34 18V252H504"></path>
-  <text class="small" x="502" y="26" text-anchor="end">top: unsure</text>
-  <text class="small" x="40" y="244">bottom: sure</text>
+  <path class="axis" d="M34 14V212H504"></path>
+  <text class="small" x="502" y="22" text-anchor="end">top: unsure</text>
+  <text class="small" x="40" y="205">bottom: sure</text>
+  <text class="small" x="38" y={LR_BOTTOM}>
+    lr
+  </text>
   {
     ticks.map(year => (
       <text
         class="small"
         x={x(year)}
-        y="272"
+        y="276"
         text-anchor={year === START ? 'start' : 'middle'}
       >
         {year}
@@ -103,6 +135,7 @@ const dots = checkpoints.map((c, i) => {
     ))
   }
   <path class="raw" d={raw}></path>
+  <path class="lr" d={lr}></path>
   <path class="smooth" d={smooth} pathLength="1"></path>
   {
     dots.map(d => (
@@ -112,10 +145,15 @@ const dots = checkpoints.map((c, i) => {
           {d.label}
         </text>
         <circle class="dot" cx={d.cx} cy={d.cy} r="5" />
-        <circle class="hit" cx={d.cx} cy={d.cy - 12} r="24" />
       </g>
     ))
   }
+  <g class="cursor" hidden>
+    <path class="rule" d="M0 14V252"></path>
+    <circle r="3.5"></circle>
+    <text class="small when" y="292"></text>
+  </g>
+  <rect class="hit" x="34" y="0" width="470" height="262"></rect>
 </svg>
 
 <style>
@@ -147,8 +185,26 @@ const dots = checkpoints.map((c, i) => {
     stroke-dasharray: 1;
     animation: draw 1.4s cubic-bezier(0.4, 0, 0.2, 1) both;
   }
-  .ck {
-    cursor: default;
+  .lr {
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1.2;
+    stroke-linejoin: round;
+    opacity: 0.7;
+  }
+  .cursor .rule {
+    stroke: var(--faint-foreground);
+    stroke-dasharray: 2 3;
+  }
+  .cursor circle {
+    fill: var(--foreground);
+  }
+  .cursor .when {
+    fill: var(--foreground);
+  }
+  .hit {
+    cursor: crosshair;
+    touch-action: pan-y;
   }
   .ck text {
     font:
