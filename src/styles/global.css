@@ -80,7 +80,7 @@
   .page {
     background: var(--paper) top center / var(--paint-width) auto repeat-y;
     --meadow-height: calc(var(--paint-width) * 0.07);
-    padding-bottom: calc(var(--paint-width) * 0.085);
+    padding-bottom: calc(var(--paint-width) * 0.074);
   }
 
   .page-sky,
@@ -100,7 +100,7 @@
   }
 
   /* The home page's sky is taller and has the sun in it */
-  @media (min-width: 48rem) {
+  @media (min-width: 80rem) {
     .page-sky.sun {
       height: 17rem;
       background-image: var(--sky-top), var(--sky-tile);
@@ -110,7 +110,7 @@
 
   .page-ground {
     bottom: 0;
-    height: calc(var(--paint-width) * 0.14);
+    height: calc(var(--paint-width) * 0.115);
     background: var(--ground) bottom center / var(--paint-width) auto no-repeat;
     mask-image: linear-gradient(to bottom, transparent, #000 45%);
   }

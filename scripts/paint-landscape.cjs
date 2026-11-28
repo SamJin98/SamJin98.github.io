@@ -72,7 +72,7 @@ const hills = [
   x => 0.29 + 0.19 * g(x, 0.82, 0.13) + 0.05 * g(x, 0.2, 0.14)
 ];
 const meadowTop = x => 0.24 + 0.02 * Math.sin(x * 9) + 0.012 * Math.sin(x * 23 + 1);
-const SUN = [W * 0.545, H * 0.2, 74];
+const SUN = [W * 0.95, H * 0.17, 70];
 
 // 1. Flat picture to sample colours from
 const src = document.createElement('canvas'); src.width = W; src.height = H; const s = src.getContext('2d');

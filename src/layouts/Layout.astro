@@ -11,15 +11,15 @@ interface Props {
   description?: string
   /** List pages use the full container; article pages stay at reading width */
   wide?: boolean
-  /** The home page shows the sun in the sky at the top */
-  sun?: boolean
+  /** The home page: sun in the sky, no footer, so it fits one screen */
+  home?: boolean
 }
 
 const {
   title = 'Sam Jin',
   description = 'AI engineer at ByteDance working on LLM evaluation, coding agents, and RL training for code generation.',
   wide = false,
-  sun = false
+  home = false
 } = Astro.props
 
 const canonical = new URL(Astro.url.pathname, Astro.site)
@@ -139,16 +139,20 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
     </script>
   </head>
   <body class="page min-h-screen flex flex-col">
-    <div class:list={['page-sky', sun && 'sun']} aria-hidden="true"></div>
+    <div class:list={['page-sky', home && 'sun']} aria-hidden="true"></div>
     <div class="page-ground" aria-hidden="true"></div>
-    <div class="mx-auto w-full max-w-4xl flex-1 flex flex-col px-6">
+    <div class="mx-auto w-full max-w-5xl flex-1 flex flex-col px-6">
       <Header pathname={Astro.url.pathname} />
       <main
-        class:list={['flex-1 pb-16', !wide && 'mx-auto w-full max-w-2xl']}
+        class:list={[
+          'flex-1',
+          home ? 'pb-4' : 'pb-10',
+          !wide && 'mx-auto w-full max-w-2xl'
+        ]}
       >
         <slot />
       </main>
-      <Footer />
+      {!home && <Footer />}
     </div>
     <Meadow />
   </body>
