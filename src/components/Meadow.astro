@@ -1,8 +1,10 @@
 ---
-// The meadow at the foot of every page, painted loosely: one dark mass of
-// grass in broad strokes, with a ragged top edge and soft smears of
-// flowers. It sways in a slow wind and leans away from the pointer. With
-// reduced motion it is painted once and left still.
+// The meadow at the foot of every page, painted the way a field is dabbed in
+// oils: rows of short leaf-shaped touches laid over each other from the back
+// to the front, yellower at the far edge and deeper green near the viewer,
+// with soft smears of flowers standing among them. It sways in a slow wind
+// and leans away from the pointer. With reduced motion it is painted once
+// and left still.
 ---
 
 <canvas class="meadow" aria-hidden="true"></canvas>
@@ -20,10 +22,10 @@
 </style>
 
 <script>
-  interface Stroke {
+  interface Dab {
     x: number
     y: number
-    length: number
+    height: number
     width: number
     colour: string
     phase: number
@@ -32,20 +34,20 @@
     flower: boolean
   }
 
+  type RGB = [number, number, number]
+
   const palettes = {
     light: {
-      top: '#5a6540',
-      bottom: '#454f2e',
-      tips: ['#56613c', '#5f6a42', '#4e5936'],
-      hairs: ['rgb(134 144 94 / 0.22)', 'rgb(52 60 36 / 0.26)', 'rgb(108 118 74 / 0.2)'],
-      flowers: ['#6f63b8', '#8d84c9', '#b4577f', '#c79a3a', '#b9b6c9', '#7f5aa6']
+      ground: '#4f6230',
+      far: [142, 152, 74] as RGB,
+      near: [70, 92, 42] as RGB,
+      flowers: ['#7a6cc4', '#9a90d0', '#c0577f', '#d6a233', '#e4e0ea', '#e9b23c']
     },
     dark: {
-      top: '#2a321e',
-      bottom: '#1b2114',
-      tips: ['#28301c', '#2e3721', '#232b19'],
-      hairs: ['rgb(84 94 58 / 0.2)', 'rgb(16 20 11 / 0.3)', 'rgb(64 74 46 / 0.2)'],
-      flowers: ['#4d4585', '#665f96', '#7d3f5c', '#8c6d2c', '#7f7d8c', '#59407a']
+      ground: '#1f2716',
+      far: [62, 72, 40] as RGB,
+      near: [28, 37, 20] as RGB,
+      flowers: ['#544b8f', '#6c649c', '#84415f', '#93722d', '#8a8896', '#9a7a30']
     }
   }
 
@@ -56,10 +58,7 @@
     const root = document.documentElement
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches
     let palette = palettes.light
-    let tips: Stroke[] = []
-    let hairs: Stroke[] = []
-    let flowers: Stroke[] = []
-    let edge: number[] = []
+    let dabs: Dab[] = []
     let width = 0
     let height = 0
     let pointerX = -1e4
@@ -77,145 +76,144 @@
     }
     const pick = <T,>(list: T[]) => list[Math.floor(random() * list.length)]
 
-    // Where the mass of grass starts, as a gently uneven line
+    // Where the field starts, as a gently uneven line
     const top = (x: number) =>
-      height * (0.38 + 0.035 * Math.sin(x * 0.011) + 0.02 * Math.sin(x * 0.037 + 2))
+      height * (0.36 + 0.035 * Math.sin(x * 0.011) + 0.02 * Math.sin(x * 0.037 + 2))
 
     const plant = () => {
       palette = palettes[root.classList.contains('dark') ? 'dark' : 'light']
       seed = 7
-      tips = []
-      hairs = []
-      flowers = []
-      edge = []
-      for (let x = 0; x <= width + 6; x += 6) edge.push(top(x))
+      dabs = []
 
-      const make = (x: number, y: number, length: number, w: number, colour: string, flower = false): Stroke => ({
-        x, y, length, width: w, colour, phase: random() * Math.PI * 2, push: 0, speed: 0, flower
-      })
-
-      // Ragged top edge: short blunt tips standing just above the mass
-      for (let x = -6; x < width + 6; x += 2.2 + random() * 3.2)
-        tips.push(make(x, top(x) + 3, height * (0.06 + random() * random() * 0.24), 5 + random() * 7, pick(palette.tips)))
-
-      // The body: broad, faint strokes, lighter and darker than the ground
-      const count = Math.round((width * height) / 260)
-      for (let i = 0; i < count; i++) {
-        const x = random() * width
-        const y = top(x) + random() * (height - top(x)) + height * 0.06
-        hairs.push(make(x, y, height * (0.16 + random() * 0.26), 3.5 + random() * 6, pick(palette.hairs)))
+      // Rows of leaf-shaped touches from the far edge to the near one. Each
+      // row overlaps the one behind it; touches grow and deepen in colour
+      // toward the viewer, and every one is mixed a little differently.
+      const rows = Math.max(8, Math.round(height / 9))
+      for (let row = 0; row < rows; row++) {
+        const depth = row / (rows - 1)
+        const size = 0.7 + depth * 0.8
+        const gap = 5.2 * size
+        for (let x = -gap + random() * gap; x < width + gap; x += gap * (0.7 + random() * 0.6)) {
+          const y = top(x) + (height - top(x)) * depth * 1.04 + (random() - 0.2) * 7 * size
+          const mix = Math.min(1, Math.max(0, depth + (random() - 0.5) * 0.45))
+          const tone = 0.88 + random() * 0.26
+          const warm = random() < 0.12 ? 1.12 : 1
+          const c = palette.far.map((far, i) =>
+            Math.round(Math.min(255, (far + (palette.near[i] - far) * mix) * tone * (i === 2 ? 1 : warm)))
+          )
+          dabs.push({
+            x,
+            y,
+            height: (13 + random() * 13) * size,
+            width: (5 + random() * 4.5) * size,
+            colour: `rgb(${c[0]} ${c[1]} ${c[2]})`,
+            phase: random() * Math.PI * 2,
+            push: 0,
+            speed: 0,
+            flower: false
+          })
+        }
       }
 
       // Flowers: soft upright smears, a few to a clump, bigger lower down
-      for (let x = random() * 40; x < width; x += 24 + random() * 60) {
-        const depth = 0.3 + random() * 0.7
+      for (let x = random() * 40; x < width; x += 30 + random() * 70) {
+        const depth = 0.2 + random() * 0.8
         const baseY = top(x) + (height - top(x)) * depth
         const colour = pick(palette.flowers)
-        const size = 0.55 + depth * 0.75
-        const n = 2 + Math.floor(random() * 3.4)
+        const size = 0.6 + depth * 0.8
+        const n = 1 + Math.floor(random() * 3.4)
         for (let k = 0; k < n; k++)
-          flowers.push(
-            make(
-              x + (random() - 0.5) * 26 * size,
-              baseY + (random() - 0.5) * height * 0.12,
-              height * (0.2 + random() * 0.24) * size,
-              (6 + random() * 5) * size,
-              random() < 0.75 ? colour : pick(palette.flowers),
-              true
-            )
-          )
+          dabs.push({
+            x: x + (random() - 0.5) * 28 * size,
+            y: baseY + (random() - 0.5) * 10,
+            height: (22 + random() * 22) * size,
+            width: (4.5 + random() * 4) * size,
+            colour: random() < 0.75 ? colour : pick(palette.flowers),
+            phase: random() * Math.PI * 2,
+            push: 0,
+            speed: 0,
+            flower: true
+          })
       }
-      flowers.sort((a, b) => a.y - b.y)
+
+      // Painted back to front, so nearer touches cover the feet of farther
+      // ones. Flowers go in a little late, which keeps their heads clear.
+      const order = (dab: Dab) => dab.y + (dab.flower ? dab.height * 0.55 : 0)
+      dabs.sort((a, b) => order(a) - order(b))
     }
 
     const resize = () => {
       const box = canvas.getBoundingClientRect()
       // Drawn a little under screen resolution, which keeps the paint soft
-      const ratio = Math.min(devicePixelRatio || 1, 2) * 0.55
+      const ratio = Math.min(devicePixelRatio || 1, 2) * 0.6
       width = box.width
       height = box.height
       canvas.width = Math.round(width * ratio)
       canvas.height = Math.round(height * ratio)
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
-      ctx.lineCap = 'round'
       plant()
       paint(performance.now())
-    }
-
-    // How far a stroke's top leans: wind plus the pointer pushing it aside
-    const lean = (s: Stroke, t: number) => {
-      const wind = still
-        ? 0
-        : Math.sin(t * 0.7 + s.x * 0.012) * 2.6 + Math.sin(t * 1.9 + s.phase) * 0.8
-      const dx = s.x - pointerX
-      const dy = s.y - s.length / 2 - pointerY
-      const distance = Math.hypot(dx, dy)
-      const reach = 80
-      const target =
-        distance < reach ? Math.sign(dx || 1) * (1 - distance / reach) ** 2 * 22 : 0
-      s.speed += (target - s.push) * 0.1
-      s.speed *= 0.78
-      s.push += s.speed
-      return (wind + s.push) * Math.min(1, s.length / (height * 0.2))
     }
 
     const paint = (now: number) => {
       const t = now / 1000
       ctx.clearRect(0, 0, width, height)
 
-      // The mass of grass
-      const fill = ctx.createLinearGradient(0, height * 0.38, 0, height)
-      fill.addColorStop(0, palette.top)
-      fill.addColorStop(1, palette.bottom)
-      ctx.fillStyle = fill
+      // Ground colour under the touches, so no paper shows between them
+      ctx.fillStyle = palette.ground
       ctx.beginPath()
       ctx.moveTo(0, height)
-      edge.forEach((y, i) => ctx.lineTo(i * 6, y))
+      for (let x = 0; x <= width + 8; x += 8) ctx.lineTo(x, top(x) + 4)
       ctx.lineTo(width, height)
       ctx.fill()
 
-      for (const s of tips) {
-        const bend = lean(s, t)
-        ctx.strokeStyle = s.colour
-        ctx.lineWidth = s.width
-        ctx.beginPath()
-        ctx.moveTo(s.x, s.y)
-        ctx.lineTo(s.x + bend, s.y - s.length)
-        ctx.stroke()
-      }
+      for (const dab of dabs) {
+        // Wind: one slow wave across the field plus each touch's own flutter
+        const wind = still
+          ? 0
+          : Math.sin(t * 0.7 + dab.x * 0.012 + dab.y * 0.03) * 2.2 +
+            Math.sin(t * 1.9 + dab.phase) * 0.7
 
-      for (const s of hairs) {
-        const bend = lean(s, t)
-        ctx.strokeStyle = s.colour
-        ctx.lineWidth = s.width
-        ctx.beginPath()
-        ctx.moveTo(s.x, s.y)
-        ctx.lineTo(s.x + bend, s.y - s.length)
-        ctx.stroke()
-      }
+        // The pointer pushes nearby touches aside; a spring brings them back
+        const dx = dab.x - pointerX
+        const dy = dab.y - dab.height / 2 - pointerY
+        const distance = Math.hypot(dx, dy)
+        const reach = 80
+        const target =
+          distance < reach ? Math.sign(dx || 1) * (1 - distance / reach) ** 2 * 20 : 0
+        dab.speed += (target - dab.push) * 0.1
+        dab.speed *= 0.78
+        dab.push += dab.speed
 
-      for (const s of flowers) {
-        const bend = lean(s, t) * 1.3
-        ctx.save()
-        ctx.translate(s.x + bend * 0.5, s.y - s.length / 2)
-        ctx.rotate(Math.atan2(bend, s.length))
-        ctx.globalAlpha = 0.72
-        ctx.fillStyle = s.colour
-        // A spindle: pointed at both ends, widest below the middle
+        const bend = (wind + dab.push) * (dab.flower ? 1.2 : dab.height / 22)
+        const half = dab.width / 2
+        const tipX = dab.x + bend
+        const tipY = dab.y - dab.height
+
+        if (dab.flower) {
+          ctx.save()
+          ctx.translate(dab.x + bend * 0.5, dab.y - dab.height / 2)
+          ctx.rotate(Math.atan2(bend, dab.height))
+          ctx.globalAlpha = 0.82
+          ctx.fillStyle = dab.colour
+          // A spindle: pointed at both ends, widest below the middle
+          ctx.beginPath()
+          ctx.moveTo(0, -dab.height / 2)
+          ctx.quadraticCurveTo(dab.width, dab.height * 0.12, 0, dab.height / 2)
+          ctx.quadraticCurveTo(-dab.width, dab.height * 0.12, 0, -dab.height / 2)
+          ctx.fill()
+          ctx.restore()
+          continue
+        }
+
+        // A leaf-shaped touch: round at the foot, drawn up to a point
+        ctx.fillStyle = dab.colour
         ctx.beginPath()
-        ctx.moveTo(0, -s.length / 2)
-        ctx.quadraticCurveTo(s.width, s.length * 0.12, 0, s.length / 2)
-        ctx.quadraticCurveTo(-s.width, s.length * 0.12, 0, -s.length / 2)
+        ctx.moveTo(dab.x - half, dab.y)
+        ctx.quadraticCurveTo(dab.x - half * 1.1 + bend * 0.4, dab.y - dab.height * 0.55, tipX, tipY)
+        ctx.quadraticCurveTo(dab.x + half * 1.1 + bend * 0.4, dab.y - dab.height * 0.55, dab.x + half, dab.y)
+        ctx.quadraticCurveTo(dab.x, dab.y + half, dab.x - half, dab.y)
         ctx.fill()
-        // A lighter touch down one side, as if the brush was reloaded
-        ctx.globalAlpha = 0.28
-        ctx.fillStyle = '#fff'
-        ctx.beginPath()
-        ctx.moveTo(0, -s.length / 2)
-        ctx.quadraticCurveTo(s.width * 0.9, s.length * 0.1, 0, s.length * 0.3)
-        ctx.quadraticCurveTo(s.width * 0.25, 0, 0, -s.length / 2)
-        ctx.fill()
-        ctx.restore()
       }
     }
 
