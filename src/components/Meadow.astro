@@ -1,0 +1,215 @@
+---
+// Grass and flowers over the painted meadow in the home page's picture. The
+// blades sway in a slow wind and lean away from the pointer. With reduced
+// motion they are painted once and left still.
+---
+
+<canvas class="meadow" aria-hidden="true"></canvas>
+
+<style>
+  .meadow {
+    position: absolute;
+    left: 1.2%;
+    right: 1.2%;
+    bottom: 2.6%;
+    width: 97.6%;
+    height: 36%;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  interface Blade {
+    x: number
+    y: number
+    height: number
+    width: number
+    lean: number
+    phase: number
+    colour: string
+    highlight: string
+    flower: string | null
+    push: number
+    speed: number
+  }
+
+  const palettes = {
+    light: {
+      grass: ['#6f7242', '#5d6638', '#838349', '#4f5a30', '#96904f'],
+      flowers: ['#f3e6c8', '#e9b04d', '#c4683f', '#a497bd', '#f0cfa0']
+    },
+    dark: {
+      grass: ['#2f3a21', '#3b4527', '#27301c', '#4a5230', '#1f2716'],
+      flowers: ['#cfc3a4', '#b98a3e', '#8f4a30', '#6f668a', '#a98f6a']
+    }
+  }
+
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas.meadow')
+  const ctx = canvas?.getContext('2d')
+
+  if (canvas && ctx) {
+    const root = document.documentElement
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+    let blades: Blade[] = []
+    let width = 0
+    let height = 0
+    let pointerX = -1e4
+    let pointerY = -1e4
+    let visible = false
+    let frame = 0
+
+    // Seeded, so the field looks the same on every visit
+    let seed = 7
+    const random = () => {
+      seed = (seed + 0x6d2b79f5) | 0
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+
+    const shade = (hex: string, by: number) => {
+      const n = parseInt(hex.slice(1), 16)
+      const part = (shift: number) =>
+        Math.max(0, Math.min(255, Math.round(((n >> shift) & 255) * by)))
+      return `rgb(${part(16)},${part(8)},${part(0)})`
+    }
+
+    const plant = () => {
+      const palette = palettes[root.classList.contains('dark') ? 'dark' : 'light']
+      seed = 7
+      blades = []
+      // Rows from the back of the field to the front: the back ones are
+      // shorter and darker, the front ones taller and lighter
+      const rows = 7
+      for (let row = 0; row < rows; row++) {
+        const depth = row / (rows - 1)
+        const rootY = height * (0.34 + depth * 0.7)
+        const size = 0.55 + depth * 0.75
+        for (let x = -8; x < width + 8; x += (3.4 + random() * 3) / (0.6 + size * 0.4)) {
+          const colour = palette.grass[Math.floor(random() * palette.grass.length)]
+          const tone = (0.78 + depth * 0.24) * (0.92 + random() * 0.18)
+          const flower =
+            random() < 0.035 + depth * 0.03
+              ? palette.flowers[Math.floor(random() * palette.flowers.length)]
+              : null
+          blades.push({
+            x,
+            y: rootY + (random() - 0.5) * height * 0.1,
+            height: height * (0.2 + random() * 0.16) * size,
+            width: (3.2 + random() * 3.4) * size,
+            lean: (random() - 0.5) * 9,
+            phase: random() * Math.PI * 2,
+            colour: shade(colour, tone),
+            highlight: shade(colour, tone * 1.2),
+            flower,
+            push: 0,
+            speed: 0
+          })
+        }
+      }
+    }
+
+    const resize = () => {
+      const box = canvas.getBoundingClientRect()
+      const ratio = Math.min(devicePixelRatio || 1, 2)
+      width = box.width
+      height = box.height
+      canvas.width = Math.round(width * ratio)
+      canvas.height = Math.round(height * ratio)
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
+      ctx.lineCap = 'round'
+      plant()
+      paint(performance.now())
+    }
+
+    const paint = (now: number) => {
+      const t = now / 1000
+      ctx.clearRect(0, 0, width, height)
+      for (const blade of blades) {
+        // Wind: one slow wave across the field plus each blade's own flutter
+        const wind =
+          Math.sin(t * 0.8 + blade.x * 0.014 + blade.y * 0.02) * 4.5 +
+          Math.sin(t * 2.1 + blade.phase) * 1.4
+
+        // The pointer pushes nearby blades aside; a spring brings them back
+        const tipY = blade.y - blade.height
+        const dx = blade.x - pointerX
+        const dy = (tipY + blade.y) / 2 - pointerY
+        const distance = Math.hypot(dx, dy)
+        const reach = 76
+        const target =
+          distance < reach
+            ? Math.sign(dx || 1) * (1 - distance / reach) ** 2 * 30
+            : 0
+        blade.speed += (target - blade.push) * 0.1
+        blade.speed *= 0.78
+        blade.push += blade.speed
+
+        const bend = blade.lean + (still ? 0 : wind) + blade.push
+        const tipX = blade.x + bend
+        const midX = blade.x + bend * 0.3
+        const midY = blade.y - blade.height * 0.55
+        const half = blade.width / 2
+
+        // A fat dab of paint: wide at the root, blunt at the tip
+        ctx.fillStyle = blade.colour
+        ctx.beginPath()
+        ctx.moveTo(blade.x - half, blade.y)
+        ctx.quadraticCurveTo(midX - half, midY, tipX - half * 0.25, tipY)
+        ctx.lineTo(tipX + half * 0.25, tipY)
+        ctx.quadraticCurveTo(midX + half, midY, blade.x + half, blade.y)
+        ctx.fill()
+
+        // The lit side of the dab
+        ctx.strokeStyle = blade.highlight
+        ctx.lineWidth = Math.max(0.8, half * 0.45)
+        ctx.beginPath()
+        ctx.moveTo(blade.x - half * 0.4, blade.y - blade.height * 0.1)
+        ctx.quadraticCurveTo(midX - half * 0.4, midY, tipX, tipY + 1)
+        ctx.stroke()
+
+        if (blade.flower) {
+          ctx.save()
+          ctx.translate(tipX, tipY)
+          ctx.rotate(Math.atan2(bend, blade.height) * 1.3)
+          ctx.fillStyle = blade.flower
+          ctx.beginPath()
+          ctx.ellipse(0, -half * 1.2, half * 0.95, half * 2.6, 0, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.restore()
+        }
+      }
+    }
+
+    const loop = (now: number) => {
+      paint(now)
+      frame = visible && !still ? requestAnimationFrame(loop) : 0
+    }
+
+    const start = () => {
+      if (!frame && visible && !still) frame = requestAnimationFrame(loop)
+    }
+
+    // Only animate while the field is on screen
+    new IntersectionObserver(entries => {
+      visible = entries[0].isIntersecting
+      start()
+    }).observe(canvas)
+
+    addEventListener('pointermove', event => {
+      const box = canvas.getBoundingClientRect()
+      pointerX = event.clientX - box.left
+      pointerY = event.clientY - box.top
+    })
+    document.addEventListener('pointerleave', () => (pointerX = pointerY = -1e4))
+    addEventListener('resize', resize)
+
+    // Repaint in the other palette when the theme changes
+    new MutationObserver(() => {
+      plant()
+      if (!frame) paint(performance.now())
+    }).observe(root, { attributes: true, attributeFilter: ['class'] })
+
+    resize()
+  }
+</script>

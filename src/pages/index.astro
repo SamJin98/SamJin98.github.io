@@ -2,6 +2,7 @@
 import Layout from '@/layouts/Layout.astro'
 import SectionHeading from '@/components/SectionHeading.astro'
 import TrainingCurve from '@/components/TrainingCurve.astro'
+import Meadow from '@/components/Meadow.astro'
 import { getCollection } from 'astro:content'
 import { personalInfo, timeline, education, sideProjects } from '@/lib/data'
 
@@ -24,34 +25,36 @@ const link = 'text-accent hover:underline underline-offset-4'
 ---
 
 <Layout wide>
-  <section class="relative">
-    <div class="landscape" aria-hidden="true"></div>
-    <h1 class="font-serif font-medium text-4xl sm:text-[2.75rem] leading-[1.1] tracking-tight">
-      {personalInfo.name}
-    </h1>
-    <p class="mt-4 max-w-[34em] md:max-w-[27em] text-lg leading-relaxed">
-      AI engineer at <b class="font-semibold">ByteDance</b>. I build the
-      benchmark, the coding agent, and the RL training that help language
-      models write code for{' '}<a
-        href="https://lynxjs.org/"
-        target="_blank"
-        rel="noopener noreferrer"
-        class={link}>Lynx</a
-      >.
-    </p>
-    <p class="mt-4 text-[0.8125rem] font-mono text-faint">
-      {personalInfo.location.replace(', California', '')}{' · '}<a
-        href={personalInfo.github}
-        target="_blank"
-        rel="noopener noreferrer"
-        class={link}>GitHub</a
-      >{' · '}<a
-        href={personalInfo.linkedin}
-        target="_blank"
-        rel="noopener noreferrer"
-        class={link}>LinkedIn</a
-      >{' · '}<a href={`mailto:${personalInfo.email}`} class={link}>Email</a>
-    </p>
+  <section class="hero">
+    <Meadow />
+    <div class="relative px-6 pt-7 sm:px-10 sm:pt-9">
+      <h1 class="font-serif font-medium text-4xl sm:text-[2.75rem] leading-[1.1] tracking-tight">
+        {personalInfo.name}
+      </h1>
+      <p class="strip mt-4 max-w-[27em] text-[1.0625rem] leading-relaxed sm:text-lg">
+        AI engineer at <b class="font-semibold">ByteDance</b>. I build the
+        benchmark, the coding agent, and the RL training that help language
+        models write code for{' '}<a
+          href="https://lynxjs.org/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class={link}>Lynx</a
+        >.
+      </p>
+      <p class="strip mt-2.5 text-[0.8125rem] font-mono text-muted-foreground">
+        {personalInfo.location.replace(', California', '')}{' · '}<a
+          href={personalInfo.github}
+          target="_blank"
+          rel="noopener noreferrer"
+          class={link}>GitHub</a
+        >{' · '}<a
+          href={personalInfo.linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
+          class={link}>LinkedIn</a
+        >{' · '}<a href={`mailto:${personalInfo.email}`} class={link}>Email</a>
+      </p>
+    </div>
   </section>
 
   <section class="mt-16">
@@ -169,32 +172,32 @@ const link = 'text-accent hover:underline underline-offset-4'
 </Layout>
 
 <style>
-  /* A painted loss landscape beside the intro, with a descent path on it.
-     The image fades out on its top and left; the mask fades the bottom. */
-  .landscape {
-    display: none;
-    position: absolute;
-    z-index: -1;
-    top: -5.5rem;
-    right: -3rem;
-    width: 33rem;
-    aspect-ratio: 2 / 1;
-    background: url('/landscape-light.webp') center / cover no-repeat;
-    mask-image:
-      linear-gradient(to bottom, #000 55%, transparent 96%),
-      linear-gradient(to right, #000 82%, transparent 100%);
-    mask-composite: intersect;
-    pointer-events: none;
+  /* The intro sits inside a painted loss landscape: sky and hills behind the
+     text, a meadow along the bottom, and a descent path on the right hill. */
+  .hero {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    background: url('/landscape-light.webp') 72% bottom / cover no-repeat;
   }
 
-  :global(.dark) .landscape {
+  :global(.dark) .hero {
     background-image: url('/landscape-dark.webp');
   }
 
-  @media (min-width: 48rem) {
-    .landscape {
-      display: block;
+  @media (min-width: 40rem) {
+    .hero {
+      aspect-ratio: 2 / 1;
+      background-size: 100% 100%;
     }
+  }
+
+  /* Text on the painting sits on a strip of the page's own paper */
+  .strip {
+    width: fit-content;
+    padding: 0.35rem 0.7rem;
+    margin-left: -0.7rem;
+    background-color: var(--background);
+    border-radius: 3px;
   }
 
   .job.on {
