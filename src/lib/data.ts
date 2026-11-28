@@ -98,16 +98,13 @@ export const education = [
   }
 ]
 
-// The home page's experience list and the restarts on its training curve.
-// `at` is the year a job starts on the curve's time axis; the loss jumps to
-// `peak` there and settles towards `floor`.
+// The home page's experience list and the checkpoints on its training curve.
+// `at` is where the checkpoint sits on the curve's time axis.
 export const timeline = [
   {
     key: 'bytedance',
     label: 'ByteDance',
     at: 2025.45,
-    peak: 0.46,
-    floor: 0.2,
     years: '2025 – now',
     title: 'AI Software Engineer',
     place: 'ByteDance',
@@ -116,9 +113,7 @@ export const timeline = [
   {
     key: 'cwru',
     label: 'Case Western',
-    at: 2023.6,
-    peak: 0.63,
-    floor: 0.33,
+    at: 2023.7,
     years: '2023 – 25',
     title: 'MS CS, Research Assistant',
     place: 'Case Western Reserve',
@@ -127,9 +122,7 @@ export const timeline = [
   {
     key: 'crec',
     label: 'CREC',
-    at: 2021.45,
-    peak: 0.66,
-    floor: 0.45,
+    at: 2021.5,
     years: '2021 – 23',
     title: 'Software Engineer',
     place: 'CREC Cloud Net',
@@ -138,9 +131,7 @@ export const timeline = [
   {
     key: 'ibm',
     label: 'IBM',
-    at: 2019.7,
-    peak: 0.7,
-    floor: 0.56,
+    at: 2019.8,
     years: '2019',
     title: 'Software Engineer Intern',
     place: 'IBM',
@@ -149,9 +140,7 @@ export const timeline = [
   {
     key: 'ucas',
     label: 'UCAS',
-    at: 2018,
-    peak: 0.84,
-    floor: 0.62,
+    at: 2018.2,
     years: '2018 – 20',
     title: 'Research Assistant',
     place: 'Chinese Academy of Sciences',

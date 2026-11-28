@@ -86,10 +86,9 @@ const link = 'text-accent hover:underline underline-offset-4'
       <figure>
         <TrainingCurve checkpoints={timeline} />
         <figcaption class="mt-2 text-[0.8125rem] leading-relaxed text-muted-foreground">
-          The same years drawn as a training run with warm restarts. Each
-          change of direction resets the learning rate: I get worse for a
-          while, then better than before. Move along the line to see where I
-          was.
+          The same years drawn as a training curve. Lower means I was surer of
+          what to work on. The bump in 2023 is quitting my job to go back to
+          school.
         </figcaption>
       </figure>
         <h3 class="mt-8 font-mono text-[0.6875rem] font-medium uppercase tracking-widest text-faint">Education</h3>
@@ -175,7 +174,7 @@ const link = 'text-accent hover:underline underline-offset-4'
 </style>
 
 <script>
-  // Hovering a job highlights its restart on the curve, and the other way
+  // Hovering a job highlights its checkpoint on the curve, and the other way
   const linked = document.querySelectorAll<HTMLElement | SVGElement>(
     '#jobs [data-job], .curve [data-job]'
   )
@@ -187,52 +186,4 @@ const link = 'text-accent hover:underline underline-offset-4'
     el.addEventListener('click', () => highlight(el.dataset.job))
   })
   highlight(document.querySelector<HTMLElement>('#jobs [data-job]')?.dataset.job)
-
-  // A cursor that follows the pointer along the line, like reading a value
-  // off a training dashboard: it shows the month and lights up the job
-  const svg = document.querySelector<SVGSVGElement>('.curve')
-  const cursor = svg?.querySelector<SVGGElement>('.cursor')
-  if (svg && cursor) {
-    const samples: [number, number][] = JSON.parse(svg.dataset.samples!)
-    const spans: [number, string][] = JSON.parse(svg.dataset.spans!)
-    const x0 = Number(svg.dataset.x0)
-    const x1 = Number(svg.dataset.x1)
-    const start = Number(svg.dataset.start)
-    const end = Number(svg.dataset.end)
-    const rule = cursor.querySelector('.rule')!
-    const dot = cursor.querySelector('circle')!
-    const when = cursor.querySelector('.when')!
-    const months = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')
-
-    const move = (event: PointerEvent) => {
-      const box = svg.getBoundingClientRect()
-      const scale = svg.viewBox.baseVal.width / box.width
-      const x = Math.min(Math.max((event.clientX - box.left) * scale, x0), x1)
-      // Height of the line at x, between the two nearest samples
-      let i = samples.findIndex(sample => sample[0] >= x)
-      if (i < 1) i = 1
-      const [ax, ay] = samples[i - 1]
-      const [bx, by] = samples[i]
-      const y = ay + ((by - ay) * (x - ax)) / (bx - ax || 1)
-
-      const year = start + ((x - x0) / (x1 - x0)) * (end - start)
-      const whole = Math.floor(year)
-      const month = months[Math.min(Math.floor((year - whole) * 12), 11)]
-      const span = spans.filter(([from]) => year >= from).pop() ?? spans[0]
-
-      rule.setAttribute('transform', `translate(${x})`)
-      dot.setAttribute('cx', String(x))
-      dot.setAttribute('cy', String(y))
-      when.textContent = `${month} ${whole}`
-      when.setAttribute('x', String(x))
-      when.setAttribute('text-anchor', x > x1 - 40 ? 'end' : x < x0 + 40 ? 'start' : 'middle')
-      cursor.removeAttribute('hidden')
-      highlight(span[1])
-    }
-
-    const hit = svg.querySelector<SVGRectElement>('.hit')!
-    hit.addEventListener('pointermove', move)
-    hit.addEventListener('pointerdown', move)
-    hit.addEventListener('pointerleave', () => cursor.setAttribute('hidden', ''))
-  }
 </script>
