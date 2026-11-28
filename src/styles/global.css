@@ -73,7 +73,7 @@
     --ground: url('/paint/ground-light.webp');
     --paper: url('/paint/paper-light.webp');
     --paper-wash: color-mix(in oklab, var(--background) 50%, transparent);
-    --sky-strength: 42%;
+    --sky-strength: 0%;
   }
 
   .dark {

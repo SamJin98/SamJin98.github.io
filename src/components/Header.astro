@@ -21,7 +21,7 @@ const isActive = (href: string) =>
   <a href="/" class="font-medium text-foreground hover:text-accent transition-colors">
     Sam Jin
   </a>
-  <nav class="flex items-center gap-5 text-sm">
+  <nav class="flex items-center gap-6 text-[0.9375rem] font-medium">
     {
       links.map(link => (
         <a
@@ -30,8 +30,8 @@ const isActive = (href: string) =>
           class:list={[
             'transition-colors hover:text-foreground',
             isActive(link.href)
-              ? 'text-foreground'
-              : 'text-foreground/80'
+              ? 'text-foreground underline decoration-accent decoration-2 underline-offset-[0.4em]'
+              : 'text-foreground/85'
           ]}
         >
           {link.label}
@@ -42,7 +42,7 @@ const isActive = (href: string) =>
       id="theme-toggle"
       type="button"
       aria-label="Toggle theme"
-      class="text-foreground/80 hover:text-foreground transition-colors cursor-pointer"
+      class="text-foreground/85 hover:text-foreground transition-colors cursor-pointer"
     >
       <svg
         class="hidden dark:block"
