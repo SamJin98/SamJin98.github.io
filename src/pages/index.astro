@@ -53,7 +53,7 @@ const link = 'text-accent hover:underline underline-offset-4'
     </p>
   </section>
 
-  <div class="mt-9 grid items-start gap-x-10 gap-y-9 lg:grid-cols-[1.25fr_1fr_1fr]">
+  <div class="cols grid items-start gap-x-12 gap-y-9 lg:grid-cols-[1.25fr_1fr_1fr]">
     <section>
       <SectionHeading title="Experience" />
       <ul id="jobs" class="mt-2">
@@ -173,13 +173,19 @@ const link = 'text-accent hover:underline underline-offset-4'
     background-color: var(--muted);
   }
 
-  /* On wide screens only the highlighted job shows its line, so the page
-     fits one screen; long post titles stay on one line */
-  @media (min-width: 64rem) {
+  /* On wide but short screens only the highlighted job shows its line, so
+     the page fits one screen; long post titles stay on one line */
+  .cols {
+    margin-top: clamp(2.25rem, 6.5vh, 5rem);
+  }
+
+  @media (min-width: 64rem) and (max-height: 67.99rem) {
     .job:not(.on) .desc {
       display: none;
     }
+  }
 
+  @media (min-width: 64rem) {
     .post {
       overflow: hidden;
       text-overflow: ellipsis;

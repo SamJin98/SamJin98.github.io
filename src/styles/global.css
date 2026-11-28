@@ -60,6 +60,12 @@
      a sky with a sun, more sky that repeats, and hills over a meadow.
      --paint-width is how wide they are drawn, so things laid over them
      (the grass) can line up. */
+  /* Type and spacing grow with the window, so large screens are not left
+     with a small page in the middle */
+  html {
+    font-size: clamp(16px, min(1.2vw, 2vh), 20px);
+  }
+
   :root {
     --paint-width: max(100vw, 56rem);
     --sky-top: url('/paint/sky-top-light.webp');
