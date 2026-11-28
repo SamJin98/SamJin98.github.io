@@ -31,7 +31,7 @@ const isActive = (href: string) =>
             'transition-colors hover:text-foreground',
             isActive(link.href)
               ? 'text-foreground'
-              : 'text-foreground/65'
+              : 'text-foreground/80'
           ]}
         >
           {link.label}
@@ -42,7 +42,7 @@ const isActive = (href: string) =>
       id="theme-toggle"
       type="button"
       aria-label="Toggle theme"
-      class="text-foreground/65 hover:text-foreground transition-colors cursor-pointer"
+      class="text-foreground/80 hover:text-foreground transition-colors cursor-pointer"
     >
       <svg
         class="hidden dark:block"

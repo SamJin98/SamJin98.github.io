@@ -73,6 +73,7 @@
     --ground: url('/paint/ground-light.webp');
     --paper: url('/paint/paper-light.webp');
     --paper-wash: color-mix(in oklab, var(--background) 50%, transparent);
+    --sky-strength: 42%;
   }
 
   .dark {
@@ -81,6 +82,7 @@
     --ground: url('/paint/ground-dark.webp');
     --paper: url('/paint/paper-dark.webp');
     --paper-wash: color-mix(in oklab, var(--background) 30%, transparent);
+    --sky-strength: 70%;
   }
 
   /* The page is thickly painted paper, with sky coming in from the top and
@@ -104,15 +106,15 @@
     pointer-events: none;
   }
 
-  /* A pale sky at the top of every page, strongest at the very top and
-     nearly gone where the text starts. On small screens the picture is
+  /* A pale sky at the top of every page, faint enough for the header to read
+     over it and gone where the text starts. On small screens the picture is
      drawn larger and shifted, which puts the sun out of view. */
   .page-sky {
     top: 0;
     height: 15rem;
     background: var(--sky-top) 30% top / calc(var(--paint-width) * 1.6) auto
       no-repeat;
-    mask-image: linear-gradient(to bottom, #000, rgb(0 0 0 / 35%) 45%, transparent);
+    mask-image: linear-gradient(to bottom, rgb(0 0 0 / var(--sky-strength)), transparent 75%);
   }
 
   /* Wide screens: the sun (a moon in the dark theme) sits in the top right
@@ -128,7 +130,7 @@
           #000 calc(var(--paint-width) * 0.05),
           transparent calc(var(--paint-width) * 0.08)
         ),
-        linear-gradient(to bottom, #000, rgb(0 0 0 / 35%) 45%, transparent);
+        linear-gradient(to bottom, rgb(0 0 0 / var(--sky-strength)), transparent 75%);
     }
   }
 
